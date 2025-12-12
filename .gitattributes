@@ -1,0 +1,91 @@
+# ========================================
+# 🌍 LINE ENDINGS (UNIX STYLE)
+# ========================================
+# Força todos os arquivos de texto a usar LF
+* text=auto eol=lf
+
+# Corrige line endings em arquivos específicos do Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# ========================================
+# 🧩 TYPESCRIPT / JAVASCRIPT
+# ========================================
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.env text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# ========================================
+# ⚙️ CONFIG FILES
+# ========================================
+*.sh text eol=lf
+*.conf text eol=lf
+*.config text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.rc text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+*.editorconfig text eol=lf
+*.prettierrc text eol=lf
+*.eslintrc text eol=lf
+*.eslintignore text eol=lf
+*.babelrc text eol=lf
+
+# ========================================
+# 📄 MARKDOWN / DOCUMENTAÇÃO
+# ========================================
+*.md text eol=lf
+*.txt text eol=lf
+*.log text eol=lf
+LICENSE text eol=lf
+
+# ========================================
+# 🎨 DESIGN / BINÁRIOS
+# ========================================
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.bmp binary
+*.ico binary
+*.psd binary
+*.svg binary
+*.mp4 binary
+*.mp3 binary
+*.wav binary
+*.m4a binary
+*.mov binary
+*.webm binary
+
+# ========================================
+# 🧱 OS-SPECIFIC FILES (do not normalize)
+# ========================================
+*.exe binary
+*.dll binary
+*.bin binary
+*.so binary
+*.dylib binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.7z binary
+*.rar binary
+
+# ========================================
+# 🧠 ADDITIONAL RULES
+# ========================================
+# Keep CRLF for Windows-only scripts
+scripts/windows/** text eol=crlf
+
+# Ignore re-encoding for FFmpeg and media outputs
+assets/**/*.mp4 binary
+assets/**/*.mp3 binary
+assets/**/*.wav binary
+assets/**/*.png binary
+assets/**/*.jpg binary

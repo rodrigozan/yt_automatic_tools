@@ -1,0 +1,110 @@
+# ========================================
+# 🔧 NODE / TYPESCRIPT
+# ========================================
+node_modules/
+dist/
+build/
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+tsconfig.tsbuildinfo
+
+# ========================================
+# 🧩 ENVIRONMENT & CONFIG
+# ========================================
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# ========================================
+# 📦 DATABASE / TMP FILES
+# ========================================
+data/
+tmp/
+*.sqlite
+*.db
+*.pid
+*.seed
+dump.rdb
+*.lock
+
+# ========================================
+# 🧠 PLAYGROUNDS & TESTS
+# ========================================
+playground/
+playgrounds/
+__playground__/
+src/tests/
+src/test/
+*.test.ts
+
+# ========================================
+# 🎥 MEDIA / ASSETS PESADOS
+# ========================================
+assets/**/*.mp4
+assets/**/*.mp3
+assets/**/*.wav
+assets/**/*.m4a
+assets/**/*.mov
+assets/**/*.avi
+assets/**/*.flv
+assets/**/*.mkv
+assets/**/*.webm
+assets/**/*.png
+assets/**/*.jpg
+assets/**/*.jpeg
+assets/**/*.gif
+assets/**/*.bmp
+assets/**/*.svg
+assets/**/*.psd
+assets/**/*.xcf
+
+# Mas mantenha arquivos de estrutura de projeto
+!assets/.gitkeep
+
+# ========================================
+# 🪶 FFmpeg / Cache / Temp outputs
+# ========================================
+*.tmp
+*.temp
+*.bak
+*.old
+*.cache
+*.part
+*.crdownload
+assets/**/output/
+assets/**/videos/
+assets/**/storys/**/output/
+assets/**/musics/**/videos/
+assets/**/storys/**/inputs/
+assets/**/storys/**/musics/
+
+# ========================================
+# 🧰 OS / SYSTEM FILES
+# ========================================
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ========================================
+# 🔥 SECURITY
+# ========================================
+*.pem
+*.key
+*.crt
+*.pfx
+*.cer
+*.csr
+secrets/
+credentials/
