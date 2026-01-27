@@ -70,4 +70,5 @@ router.post("/video/generate_by_video", (req, res) => controller.generate_by_vid
  *         description: Content generated successfully
  */
 router.post("/video/generate_by_image", (req, res) => controller.generate_by_image(req, res));
+
 export default router;

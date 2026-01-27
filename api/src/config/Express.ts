@@ -24,8 +24,8 @@ export class Express {
     }
 
     private routes() {
-        this.server.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-        this.server.use(router);
+        this.server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+        this.server.use('/api', router);
     }
 
     private async connection() {
