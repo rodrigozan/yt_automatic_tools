@@ -1,0 +1,25 @@
+Extrair áudio de um vídeo com a saída do vídeo
+ffmpeg -i video.mp4 -an -c:v copy 1.mp4    
+
+Reverter um vídeo
+ffmpeg -i 1.mp4 -vf reverse 2.mp4
+
+Unir um ou mais vídeos através de um txt
+ffmpeg -f concat -safe 0 -i inputs.txt -c:v libx264 -preset veryfast -crf 18 -c:a aac -b:a 192k video_base.mp4
+
+Extrair áudio de um vídeo com a saída do audio
+ffmpeg -i video.mp4 -vn -c:a libmp3lame -q:a 2 playlist.mp3
+
+
+Adicionar áudio a um vídeo
+ffmpeg -stream_loop -1 -i output_unido.mp4 -i output_unido.mp3 -map 0:v -map 1:a -c copy -shortest output_final.mp4
+
+Adicionar áudio a um vídeo com 20% do volume
+ffmpeg -i output.mp4 -i IPray.mp3 -filter_complex "[1:a]volume=0.2[bg];[0:a][bg]amix=inputs=2:duration=first[a]" -map 0:v -map "[a]" -c:v copy -c:a aac output_final_com_musica.mp4
+
+Unir um ou mais arquivos de audio através de um txt
+ffmpeg -f concat -safe 0 -i inputs.txt -c copy playlist_rod.mp3
+
+Converter m4a para mp3
+ffmpeg -i input.m4a output.mp3
+
