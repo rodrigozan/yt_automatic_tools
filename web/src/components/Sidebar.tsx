@@ -1,8 +1,17 @@
-import { Home, Upload, Box, Settings } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { Home, Upload, Box, Settings, LogOut } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Sidebar() {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
     const navItems = [
         { to: '/', icon: Home, label: 'Dashboard' },
         { to: '/upload', icon: Upload, label: 'Upload' },
@@ -36,11 +45,27 @@ export function Sidebar() {
                     </NavLink>
                 ))}
             </nav>
-            <div className="p-4 border-t border-border">
-                <div className="p-4 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Logged in as</p>
-                    <p className="text-sm font-medium">User</p>
+            <div className="p-4 border-t border-border space-y-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                    {user?.picture ? (
+                        <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full" />
+                    ) : (
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                            {user?.name?.[0] || user?.email[0].toUpperCase()}
+                        </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                    </div>
                 </div>
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign out</span>
+                </button>
             </div>
         </aside>
     );

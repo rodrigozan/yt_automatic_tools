@@ -6,7 +6,7 @@ import { config } from "dotenv";
 import { User } from "../models/user.model";
 
 /* --- Services  --- */
-import { YtMetadataService } from "./yt_metadata.service.js";
+import { YtMetadataService } from "./yt_metadata.service";
 
 /* --- Utils --- */
 import { getStatus } from "../utils/get_status.utils";

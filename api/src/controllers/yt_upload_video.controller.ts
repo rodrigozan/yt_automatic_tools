@@ -10,6 +10,7 @@ export class YtUploadVideoController {
         title,
         description,
         tags,
+        chaptersFilePath,
         refreshToken,
         channelLang,
         publishAt,
@@ -28,6 +29,7 @@ export class YtUploadVideoController {
         title,
         description,
         tags || [],
+        chaptersFilePath,
         refreshToken,
         channelLang,
         publishAt

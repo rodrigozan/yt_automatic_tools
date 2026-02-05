@@ -5,7 +5,7 @@ const router = Router();
 
 /**
  * @swagger
- * /api/youtube/auth:
+ * /youtube/auth:
  *   get:
  *     summary: Initiate YouTube Authorization
  *     description: Redirects to Google for YouTube authorization.
@@ -20,10 +20,10 @@ const router = Router();
  *       302:
  *         description: Redirect to Google Auth
  */
-router.get("/api/youtube/auth", YtAuthorizeChannelsController.auth);
+router.get("/youtube/auth", YtAuthorizeChannelsController.auth);
 /**
  * @swagger
- * /api/youtube/oauth2callback:
+ * /youtube/oauth2callback:
  *   get:
  *     summary: YouTube OAuth Callback
  *     description: Handles the callback from Google Authorization.
@@ -44,6 +44,6 @@ router.get("/api/youtube/auth", YtAuthorizeChannelsController.auth);
  *       200:
  *         description: Authorization successful
  */
-router.get("/api/youtube/oauth2callback", YtAuthorizeChannelsController.callback);
+router.get("/youtube/oauth2callback", YtAuthorizeChannelsController.callback);
 
 export default router;

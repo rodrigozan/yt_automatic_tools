@@ -42,7 +42,7 @@ export class VideoMusicByFilesGeneratorService {
         if (files.length === 0) throw new Error("Nenhum arquivo .mp3 encontrado.");
 
         let ffmpegContent = '';
-        let chaptersContent = '00:00 - Início\n';
+        let chaptersContent = '';
         let srtContent = '';
 
         let currentTime = 0;
