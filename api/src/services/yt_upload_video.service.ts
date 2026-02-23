@@ -44,12 +44,23 @@ export class YtUploadVideoService {
 
     console.log(`🤖 Gerando metadados... | Tipo YT: ${channelType} | Estilo IA: ${style.toUpperCase()}`);
 
-    // 2. Chama a IA com o estilo correto
-    const metadata = await YtMetadataService.generateFromChapters(
-      theme,
-      style,
-      chaptersContent
-    );
+    // 2. Chama a IA com o estilo correto (com fallback se falhar)
+    let metadata: { title: string; description: string; tags: string[] };
+
+    try {
+      metadata = await YtMetadataService.generateFromChapters(
+        theme,
+        style,
+        chaptersContent
+      );
+    } catch (error) {
+      console.warn("⚠️ Falha ao gerar metadados com IA. Usando fallback.");
+      metadata = {
+        title: "Insira o titulo",
+        description: "Insira a descrição",
+        tags: []
+      };
+    }
 
     console.log(`✨ Título: ${metadata.title}`);
 
@@ -61,7 +72,7 @@ export class YtUploadVideoService {
       metadata.tags,
       refreshToken,
       channelLang,
-      undefined,
+      undefined, // Deixa o getStatus decidir o horário padrão (20h)
       email,
       channelId,
       channelType // <--- Mantém o original para definir a Categoria ID
@@ -96,9 +107,13 @@ export class YtUploadVideoService {
       process.env.YT_CLIENT_SECRET,
       process.env.YT_REDIRECT_URI
     );
+
+    const activeToken = channel?.refreshToken || refreshToken || process.env.YT_REFRESH_TOKEN;
+
     oauth2Client.setCredentials({
-      refresh_token: refreshToken || process.env.YT_REFRESH_TOKEN,
+      refresh_token: activeToken,
     });
+
     const youtube = google.youtube({ version: "v3", auth: oauth2Client });
     const fileSize = fs.statSync(videoPath).size;
 
@@ -141,7 +156,7 @@ export class YtUploadVideoService {
       description += "\n\n#Shorts";
     }
 
-    const status = getStatus(isShort);
+    const status = getStatus(isShort, publishAt);
 
     try {
       const response = await youtube.videos.insert(

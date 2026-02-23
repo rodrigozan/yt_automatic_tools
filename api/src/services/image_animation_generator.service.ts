@@ -22,13 +22,31 @@ export class ImageAnimationService {
         console.log(`🎬 Gerando loop base de vídeo (${loopDuration}s)...`);
 
         try {
-            if (!fs.existsSync(imagePath)) {
-                throw new Error(`Imagem não encontrada: ${imagePath}`);
+            let finalImagePath = imagePath;
+
+            if (!fs.existsSync(finalImagePath)) {
+                throw new Error(`Imagem não encontrada: ${finalImagePath}`);
+            }
+
+            // Se for um diretório, pega a primeira imagem válida
+            if (fs.lstatSync(finalImagePath).isDirectory()) {
+                const files = fs.readdirSync(finalImagePath);
+                const validExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+                const firstImage = files.find(file =>
+                    validExtensions.includes(path.extname(file).toLowerCase())
+                );
+
+                if (!firstImage) {
+                    throw new Error(`Nenhuma imagem válida encontrada no diretório: ${finalImagePath}`);
+                }
+
+                finalImagePath = path.join(finalImagePath, firstImage);
+                console.log(`📸 Imagem selecionada do diretório: ${finalImagePath}`);
             }
 
             // Gera camada de partículas (Duração fixa curta)
             execSync(
-                `ffmpeg -stream_loop -1 -i "${particles}" -loop 1 -i "${imagePath}" -t ${loopDuration} ` +
+                `ffmpeg -stream_loop -1 -i "${particles}" -loop 1 -i "${finalImagePath}" -t ${loopDuration} ` +
                 `-filter_complex "[1:v][0:v]scale2ref[img][vid];[vid]format=rgba,colorchannelmixer=aa=0.25[ov];[img][ov]overlay,format=yuv420p" ` +
                 `-shortest -y "${tempParticles}"`,
                 { stdio: "inherit" }

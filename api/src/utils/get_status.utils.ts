@@ -1,17 +1,28 @@
 export const getStatus = (isShort: boolean, publishAt?: Date | string) => {
-    const publishHour = 18;
-    const publishMinute = 16;
+    const publishHour = 20;
+    const publishMinute = 0;
 
-    // monta data de hoje às 18:16
     const now = new Date();
-    const publishAtDate = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        publishHour,
-        publishMinute,
-        0
-    );
+    let publishAtDate: Date;
+
+    if (publishAt) {
+        publishAtDate = new Date(publishAt);
+    } else {
+        // Default: Today at 20:00 BRT
+        publishAtDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            publishHour,
+            publishMinute,
+            0
+        );
+
+        // If current time is past 20:00, schedule for tomorrow
+        if (now >= publishAtDate) {
+            publishAtDate.setDate(publishAtDate.getDate() + 1);
+        }
+    }
 
     const status: any = {
         madeForKids: false,

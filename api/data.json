@@ -1,0 +1,163 @@
+[
+    {
+        "endpoint": "/auth/register",
+        "endpoint_local": "http://localhost/api/auth/register",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/auth/register",
+        "method": "POST",
+        "body": {
+            "email": "user@example.com",
+            "password": "yourpassword",
+            "name": "User Name"
+        }
+    },
+    {
+        "endpoint": "/auth/login",
+        "endpoint_local": "http://localhost/api/auth/login",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/auth/login",
+        "method": "POST",
+        "body": {
+            "email": "user@example.com",
+            "password": "yourpassword"
+        }
+    },
+    {
+        "endpoint": "/auth/google",
+        "endpoint_local": "http://localhost/api/auth/google",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/auth/google",
+        "method": "POST",
+        "body": {
+            "token": "GOOGLE_ID_TOKEN"
+        }
+    },
+    {
+        "endpoint": "/suno/generate",
+        "endpoint_local": "http://localhost/api/suno/generate",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/suno/generate",
+        "method": "POST",
+        "body": {
+            "prompt": "A futuristic synthwave track with heavy bass"
+        }
+    },
+    {
+        "endpoint": "/video/metadata",
+        "endpoint_local": "http://localhost/api/video/metadata",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/video/metadata",
+        "method": "POST",
+        "body": {
+            "theme": "Chill Music",
+            "niche": "Lofi",
+            "musicGenre": "Jazz",
+            "language": "en",
+            "timestampFile": "C:/path/to/chapters.txt"
+        }
+    },
+    {
+        "endpoint": "/video/generate_by_video",
+        "endpoint_local": "http://localhost/api/video/generate_by_video",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/video/generate_by_video",
+        "method": "POST",
+        "body": {
+            "audioDir": "C:/path/to/audios",
+            "videoDir": "C:/path/to/video_base",
+            "outputName": "output_video.mp4",
+            "type": "playlist"
+        }
+    },
+    {
+        "endpoint": "/video/generate_by_image",
+        "endpoint_local": "http://localhost/api/video/generate_by_image",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/video/generate_by_image",
+        "method": "POST",
+        "body": {
+            "audioDir": "C:/path/to/audios",
+            "imageDir": "C:/path/to/images",
+            "videoDir": "C:/path/to/output",
+            "outputName": "output_video.mp4",
+            "type": "files"
+        }
+    },
+    {
+        "endpoint": "/video/story/generate",
+        "endpoint_local": "http://localhost/api/video/story/generate",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/video/story/generate",
+        "method": "POST",
+        "body": {
+            "targetPath": "C:/path/to/assets",
+            "musicPath": "C:/path/to/song.mp3"
+        }
+    },
+    {
+        "endpoint": "/youtube/auth",
+        "endpoint_local": "http://localhost/api/youtube/auth",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/youtube/auth",
+        "method": "GET",
+        "queryParams": {
+            "email": "user@example.com"
+        }
+    },
+    {
+        "endpoint": "/youtube/oauth2callback",
+        "endpoint_local": "http://localhost/api/youtube/oauth2callback",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/youtube/oauth2callback",
+        "method": "GET",
+        "queryParams": {
+            "code": "AUTH_CODE",
+            "state": "ENCODED_EMAIL"
+        }
+    },
+    {
+        "endpoint": "/youtube/upload",
+        "endpoint_local": "http://localhost/api/youtube/upload",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/youtube/upload",
+        "method": "POST",
+        "body": {
+            "videoDir": "C:/path/to/video.mp4",
+            "title": "My Awesome Video",
+            "description": "Video description here",
+            "tags": [
+                "lofi",
+                "chill",
+                "music"
+            ],
+            "chaptersFilePath": "C:/path/to/chapters.txt",
+            "refreshToken": "RELOAD_TOKEN_OPTIONAL",
+            "channelLang": "en",
+            "publishAt": "2026-02-11T12:00:00Z"
+        }
+    },
+    {
+        "endpoint": "/youtube/channels",
+        "endpoint_local": "http://localhost/api/youtube/channels",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/youtube/channels",
+        "method": "GET",
+        "queryParams": {
+            "email": "user@example.com"
+        }
+    },
+    {
+        "endpoint": "/orchestrator/generate_and_upload",
+        "endpoint_local": "http://localhost/api/orchestrator/generate_and_upload",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/orchestrator/generate_and_upload",
+        "method": "POST",
+        "body": {
+            "audioDir": "C:/path/to/audios",
+            "videoDir": "C:/path/to/video_output",
+            "imageDir": "C:/path/to/images",
+            "outputName": "my_awesome_video.mp4",
+            "generationType": "playlist",
+            "generationSource": "video",
+            "theme": "Relaxing Piano Music",
+            "email": "user@example.com",
+            "channelId": "UC...",
+            "channelType": "music",
+            "channelLang": "en",
+            "forceStyle": "secular"
+        }
+    },
+    {
+        "endpoint": "/",
+        "endpoint_local": "http://localhost/api/",
+        "endpoint_vps": "https://automation.smartutilitybox.com/api/",
+        "method": "GET"
+    }
+]

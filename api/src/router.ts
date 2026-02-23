@@ -1,5 +1,11 @@
 import { Router } from 'express'
-import { video, ytAuthorize, ytUploadVideo, suno, videoStoryGenerator, videoMetadataGenerator, auth } from './routers';
+import {
+    video,
+    ytAuthorize, ytUploadVideo, ytListChannels,
+    suno,
+    videoStoryGenerator, videoMetadataGenerator, videoOrchestrator,
+    auth
+} from './routers';
 
 const router = Router()
 
@@ -9,6 +15,10 @@ router.use(ytUploadVideo);
 router.use(suno);
 router.use(videoStoryGenerator);
 router.use(videoMetadataGenerator);
+router.use(videoOrchestrator);
+router.use(ytListChannels);
 router.use('/auth', auth);
+
+
 
 export default router

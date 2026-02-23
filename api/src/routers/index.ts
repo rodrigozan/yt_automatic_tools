@@ -6,3 +6,7 @@ export { default as suno } from './suno.router';
 export { default as videoStoryGenerator } from './video_story_generator.router';
 export { default as videoMetadataGenerator } from './video_metadata_generator.router';
 export { default as auth } from './auth.router';
+export { default as videoOrchestrator } from './video_orchestrator.router';
+export { default as ytListChannels } from './yt_list_channels.router';
+
+
