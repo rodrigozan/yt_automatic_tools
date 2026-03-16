@@ -6,7 +6,7 @@ import { config } from "dotenv";
 import { User } from "../models/user.model";
 
 /* --- Services  --- */
-import { YtMetadataService } from "./yt_metadata.service";
+import { MetadataService } from "./video_metadata_generator.service";
 
 /* --- Utils --- */
 import { getStatus } from "../utils/get_status.utils";
@@ -26,50 +26,54 @@ export class YtUploadVideoService {
     channelType: string, // "music", "story", "podcast_clip" (Define Categoria YT)
     refreshToken?: string,
     channelLang: string = "en",
-    forceStyle?: "christian" | "secular"
+    forceStyle?: "christian" | "secular",
+    niche?: string,
+    musicGenre?: string
   ) {
-    if (!fs.existsSync(chaptersFilePath)) throw new Error("Capítulos não encontrados");
-    const chaptersContent = fs.readFileSync(chaptersFilePath, "utf-8");
+    // 1. Define parâmetros para a IA
+    const resolvedNiche = niche || channelType || "music";
+    const resolvedMusicGenre = musicGenre || detectChannelGenre(theme) || "lofi";
+    const resolvedLanguage = channelLang.startsWith("pt") ? "portuguese" : "english";
 
-    // 1. Define o ESTILO (Tone) para a IA
-    let style: "christian" | "secular" = "secular"; // fallback
+    console.log(`🤖 Gerando metadados com Groq... | Tipo YT: ${channelType} | Nicho: ${resolvedNiche} | Gênero: ${resolvedMusicGenre}`);
 
-    if (forceStyle) {
-      style = forceStyle;
-    } else {
-      // Tenta detectar pelo tema ou busca o nome do canal no banco
-      // Aqui estou usando o tema pra simplificar, mas você pode pegar o nome do canal do objeto user
-      style = detectChannelGenre(theme);
-    }
-
-    console.log(`🤖 Gerando metadados... | Tipo YT: ${channelType} | Estilo IA: ${style.toUpperCase()}`);
-
-    // 2. Chama a IA com o estilo correto (com fallback se falhar)
-    let metadata: { title: string; description: string; tags: string[] };
+    // 2. Chama MetadataService (Groq) com fallback
+    const metadataService = new MetadataService();
+    let title: string;
+    let description: string;
+    let tags: string[];
 
     try {
-      metadata = await YtMetadataService.generateFromChapters(
+      const result = await metadataService.create({
         theme,
-        style,
-        chaptersContent
-      );
+        niche: resolvedNiche,
+        musicGenre: resolvedMusicGenre,
+        language: resolvedLanguage,
+        channelId,
+        timestampFile: chaptersFilePath,
+      });
+
+      title = result.generatedTitle;
+      description = result.generatedDescription;
+      // generatedKeywords é uma string CSV — converte para array de tags
+      tags = result.generatedKeywords
+        ? result.generatedKeywords.split(",").map((t: string) => t.trim()).filter(Boolean)
+        : [];
     } catch (error) {
-      console.warn("⚠️ Falha ao gerar metadados com IA. Usando fallback.");
-      metadata = {
-        title: "Insira o titulo",
-        description: "Insira a descrição",
-        tags: []
-      };
+      console.warn("⚠️ Falha ao gerar metadados com Groq. Usando fallback.");
+      title = "Insira o titulo";
+      description = "Insira a descrição";
+      tags = [];
     }
 
-    console.log(`✨ Título: ${metadata.title}`);
+    console.log(`✨ Título: ${title}`);
 
     // 3. Faz o Upload (passando o channelType correto para a categoria)
     return this.uploadToYouTube(
       videoPath,
-      metadata.title,
-      metadata.description,
-      metadata.tags,
+      title,
+      description,
+      tags,
       refreshToken,
       channelLang,
       undefined, // Deixa o getStatus decidir o horário padrão (20h)

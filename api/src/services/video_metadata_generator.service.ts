@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 
 // Caminhos corrigidos conforme solicitado
 import Metadata from "../models/metadata.models";
+import { User } from "../models/user.model";
 import { IMetadataInput, IMetadataResult } from "../interfaces/global.interface";
 
 export class MetadataService {
@@ -15,7 +16,22 @@ export class MetadataService {
     }
 
     public async create(data: IMetadataInput): Promise<IMetadataResult> {
-        const { theme, niche, musicGenre, language, timestampFile } = data;
+        const { theme, niche, musicGenre, language, timestampFile, channelId } = data;
+
+        // 0. Busca dados do canal no banco (spotify e youtube channel)
+        let spotifyProfile = '[SPOTIFY PROFILE]';
+        let youtubeChannel = '[YOUTUBE CHANNEL]';
+
+        if (channelId) {
+            const user = await User.findOne({ 'channels.channelId': channelId });
+            if (user) {
+                const channel = user.channels.find((c) => c.channelId === channelId);
+                if (channel) {
+                    if (channel.spotifyProfile) spotifyProfile = channel.spotifyProfile;
+                    if (channel.youtubeChannel) youtubeChannel = channel.youtubeChannel;
+                }
+            }
+        }
 
         // 1. Leitura do arquivo de timestamps (se existir)
         let timestampContent = "";
@@ -40,10 +56,9 @@ export class MetadataService {
         // [A] Contexto (IA)
         let finalDescription = generatedData.description;
 
-        // [B] Links (Listen/Watch)
-        // Ajuste os links reais aqui ou receba via parâmetro se preferir
-        finalDescription += `\n\nlisten in [SPOTIFY PROFILE]`;
-        finalDescription += `\nwatch in [YOUTUBE CHANNEL]`;
+        // [B] Links (Listen/Watch) — preenchidos com dados reais do canal
+        finalDescription += `\n\nlisten in ${spotifyProfile}`;
+        finalDescription += `\nwatch in ${youtubeChannel}`;
 
         // [C] Timestamps (do arquivo)
         if (timestampContent) {
@@ -102,9 +117,9 @@ export class MetadataService {
       
       Requirements:
       1. Title: Clickbait but relevant, optimized for search.
-      2. Description: Write at least 4 paragraphs of engaging context. Do NOT include generic headers like "Introduction".
+      2. Description: Write at least 1 paragraphs of engaging context. Do NOT include generic headers like "Introduction".
       3. Hashtags: Array of exactly 3 relevant hashtags.
-      4. Keywords (rawKeywords): Array of 50+ long-tail tags/keywords.
+      4. Keywords (rawKeywords): Array of 40+ long-tail tags/keywords.
     `;
 
         try {

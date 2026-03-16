@@ -13,6 +13,8 @@ export class YtListChannelsService {
       channelGenre: c.channelGenre,
       channelType: c.channelType,
       refreshToken: c.refreshToken ? "✅ Active" : "❌ Missing",
+      spotifyProfile: c.spotifyProfile || null,
+      youtubeChannel: c.youtubeChannel || null,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
     }));

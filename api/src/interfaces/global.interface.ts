@@ -1,5 +1,19 @@
 import { Document } from 'mongoose';
 
+export interface IChannel {
+  channelId: string;
+  channelName: string;
+  channelNickname?: string;
+  channelPath?: string;
+  channelGenre?: string;
+  channelType?: string;
+  refreshToken?: string;
+  spotifyProfile?: string;
+  youtubeChannel?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface VideoGeneratorInput {
   audioDir: string;
   videoDir: string;
@@ -26,6 +40,9 @@ export interface IMetadataInput {
   musicGenre: string;
   language: string;
   timestampFile: string;
+  channelId?: string;
+  spotifyProfile?: string;
+  youtubeChannel?: string;
 }
 
 export interface IMetadataResult extends Document {

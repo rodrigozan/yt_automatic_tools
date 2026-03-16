@@ -33,7 +33,9 @@ export class GenerateAndUploadVideosController {
                 channelType,
                 refreshToken,
                 channelLang = 'en',
-                forceStyle
+                forceStyle,
+                niche,
+                musicGenre
             } = req.body;
 
             // 1. Basic Validation
@@ -112,7 +114,9 @@ export class GenerateAndUploadVideosController {
                 channelType,
                 refreshToken,
                 channelLang,
-                forceStyle
+                forceStyle,
+                niche,
+                musicGenre
             );
 
             // 4. Return Final Result

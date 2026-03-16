@@ -11,7 +11,7 @@ export class MetadataController {
 
     public create = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const { theme, niche, musicGenre, language, timestampFile } = req.body;
+            const { theme, niche, musicGenre, language, timestampFile, channelId } = req.body;
 
             // Validação básica de entrada
             if (!theme || !niche || !musicGenre || !language) {
@@ -19,7 +19,7 @@ export class MetadataController {
             }
 
             // Chama o Service que agora resolve tudo (IA + Banco)
-            const result = await this.metadataService.create({ theme, niche, musicGenre, language, timestampFile });
+            const result = await this.metadataService.create({ theme, niche, musicGenre, language, timestampFile, channelId });
 
             return res.status(201).json(result);
         } catch (error) {
