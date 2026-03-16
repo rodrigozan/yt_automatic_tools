@@ -8,5 +8,6 @@ export { default as videoMetadataGenerator } from './video_metadata_generator.ro
 export { default as auth } from './auth.router';
 export { default as videoOrchestrator } from './video_orchestrator.router';
 export { default as ytListChannels } from './yt_list_channels.router';
+export { default as fileUpload } from './file_upload.router';
 
 

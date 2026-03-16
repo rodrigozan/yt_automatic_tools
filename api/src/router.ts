@@ -4,7 +4,7 @@ import {
     ytAuthorize, ytUploadVideo, ytListChannels,
     suno,
     videoStoryGenerator, videoMetadataGenerator, videoOrchestrator,
-    auth
+    auth, fileUpload
 } from './routers';
 
 const router = Router()
@@ -18,6 +18,7 @@ router.use(videoMetadataGenerator);
 router.use(videoOrchestrator);
 router.use(ytListChannels);
 router.use('/auth', auth);
+router.use(fileUpload);
 
 
 
