@@ -3,10 +3,11 @@ import { Schema, model } from "mongoose";
 export interface ISunoMusic {
     sunoId: string;
     prompt: string;
+    provider: 'suno' | 'replicate'; // which service generated the music
     status: string; // 'queued', 'pending', 'streaming', 'complete', 'error'
-    audioUrl?: string; // URL from Suno
-    videoUrl?: string; // Video URL from Suno (if applicable)
-    imageUrl?: string; // Cover image
+    audioUrl?: string;
+    videoUrl?: string;
+    imageUrl?: string;
     title?: string;
     model_name?: string;
     tags?: string;
@@ -19,6 +20,7 @@ export interface ISunoMusic {
 const SunoMusicSchema = new Schema<ISunoMusic>({
     sunoId: { type: String, required: true, unique: true },
     prompt: { type: String, required: true },
+    provider: { type: String, enum: ['suno', 'replicate'], default: 'suno' },
     status: { type: String, default: 'queued' },
     audioUrl: { type: String },
     videoUrl: { type: String },

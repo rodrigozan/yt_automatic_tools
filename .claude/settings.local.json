@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"D:\\\\dev\\\\yt_automatic_tools\\\\api\" && npx tsc --noEmit 2>&1)"
+    ]
+  }
+}

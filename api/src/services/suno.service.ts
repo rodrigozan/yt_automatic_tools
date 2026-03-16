@@ -9,134 +9,136 @@ export class SunoService {
 
     constructor() {
         this.apiKey = process.env.SUNO_API_KEY || '';
-        this.baseUrl = process.env.SUNO_BASE_URL || 'https://api.suno.ai/api/v1'; // Placeholder URL, adjust as needed
+        this.baseUrl = (process.env.SUNO_BASE_URL || 'https://api.sunoapi.org/api/v1').replace(/\/$/, '');
     }
 
-    public async generate(prompt: string): Promise<any> {
-        try {
-            // Placeholder for actual API call
-            // Depending on the specific Suno API wrapper or endpoint used
-            const response = await axios.post(`${this.baseUrl}/generate`, {
-                prompt: prompt,
-                customMode: false,
-                instrumental: false,
-                model: "V4_5ALL",
-                wait_audio: false,
-                callBackUrl: "http://localhost:4500/suno/callback"
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+    public isConfigured(): boolean {
+        return !!this.apiKey;
+    }
 
-            const data = response.data; // data usually contains an array of generated items or a job ID
+    public async generate(prompt: string, instrumental: boolean = true): Promise<any> {
+        const response = await axios.post(`${this.baseUrl}/generate`, {
+            prompt,
+            customMode: false,
+            instrumental,
+            model: 'V4_5',
+            wait_audio: false,
+        }, {
+            headers: {
+                Authorization: `Bearer ${this.apiKey}`,
+                'Content-Type': 'application/json',
+            },
+        });
 
-            // Assuming response.data is an array of tasks or a single object with ID
-            // Adjust according to actual API response structure
-            // Example: { id: "...", status: "..." }
+        const data = response.data?.data ?? response.data;
+        // sunoapi.org returns { data: { taskId, sunoData: [{id, status}] } }
+        // or sometimes { data: [{id, status}] }
+        const sunoId: string =
+            data?.sunoData?.[0]?.id ??
+            (Array.isArray(data) ? data[0]?.id : data?.id);
 
-            const sunoId = data.id || data[0]?.id; // Fallback logic
+        if (!sunoId) throw new Error('Suno: could not extract generation ID from response');
 
-            const newMusic = new SunoMusicModel({
-                sunoId: sunoId,
-                prompt: prompt,
-                status: data.status || 'queued'
-            });
+        const newMusic = new SunoMusicModel({
+            sunoId,
+            prompt,
+            provider: 'suno',
+            status: 'queued',
+        });
 
-            await newMusic.save();
+        await newMusic.save();
 
-            // Trigger polling in background (fire and forget or manage via queue)
-            this.pollAndDownload(sunoId);
+        // fire-and-forget polling
+        this.pollAndDownload(sunoId).catch((err) =>
+            console.error('[Suno] Background poll error:', err.message)
+        );
 
-            return newMusic;
-
-        } catch (error: any) {
-            console.error('Error generating music:', error.response?.data || error.message);
-            throw new Error('Failed to generate music');
-        }
+        return newMusic;
     }
 
     public async pollAndDownload(sunoId: string): Promise<void> {
         const maxAttempts = 60;
-        const interval = 5000; // 5 seconds
+        const interval = 5000;
 
         for (let i = 0; i < maxAttempts; i++) {
+            await new Promise((r) => setTimeout(r, interval));
+
             try {
                 const response = await axios.get(`${this.baseUrl}/feed/${sunoId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${this.apiKey}`
-                    }
+                    headers: { Authorization: `Bearer ${this.apiKey}` },
                 });
 
-                const data = response.data;
-                // Data might be an array if checking feed, or object if checking specific ID
-                const task = Array.isArray(data) ? data[0] : data;
+                const raw = response.data?.data ?? response.data;
+                const task = Array.isArray(raw) ? raw[0] : raw;
 
-                if (task.status === 'complete' || task.status === 'succeeded') {
-                    const musicRecord = await SunoMusicModel.findOne({ sunoId: sunoId });
-                    if (musicRecord) {
-                        musicRecord.status = 'complete';
-                        musicRecord.audioUrl = task.audio_url;
-                        musicRecord.videoUrl = task.video_url;
-                        musicRecord.imageUrl = task.image_url;
-                        musicRecord.title = task.title;
-                        musicRecord.duration = task.duration;
-                        musicRecord.model_name = task.model_name;
+                if (!task) continue;
 
-                        await musicRecord.save();
+                const status: string = task.status ?? '';
 
-                        if (task.audio_url) {
-                            await this.downloadFile(task.audio_url, sunoId);
+                if (status === 'complete' || status === 'succeeded') {
+                    await SunoMusicModel.findOneAndUpdate(
+                        { sunoId },
+                        {
+                            status: 'complete',
+                            audioUrl: task.audio_url,
+                            videoUrl: task.video_url,
+                            imageUrl: task.image_url,
+                            title: task.title,
+                            duration: task.duration,
+                            model_name: task.model_name,
+                            updatedAt: new Date(),
                         }
+                    );
+
+                    if (task.audio_url) {
+                        await this.downloadFile(task.audio_url, sunoId);
                     }
-                    break;
-                } else if (task.status === 'error') {
-                    await SunoMusicModel.findOneAndUpdate({ sunoId }, { status: 'error' });
-                    console.error(`Generation failed for ${sunoId}`);
-                    break;
+                    return;
                 }
 
-                await new Promise(resolve => setTimeout(resolve, interval));
+                if (status === 'error' || status === 'failed') {
+                    await SunoMusicModel.findOneAndUpdate(
+                        { sunoId },
+                        { status: 'error', updatedAt: new Date() }
+                    );
+                    console.error(`[Suno] Generation failed for ${sunoId}`);
+                    return;
+                }
 
-            } catch (error) {
-                console.error(`Error polling for ${sunoId}:`, error);
-                // Continue polling despite temporary errors?
+                // Still processing — update status in DB
+                await SunoMusicModel.findOneAndUpdate({ sunoId }, { status, updatedAt: new Date() });
+
+            } catch (err: any) {
+                console.error(`[Suno] Poll error attempt ${i + 1}:`, err.message);
             }
         }
+
+        // Timed out
+        await SunoMusicModel.findOneAndUpdate(
+            { sunoId },
+            { status: 'error', updatedAt: new Date() }
+        );
+        console.error(`[Suno] Polling timed out for ${sunoId}`);
     }
 
     private async downloadFile(url: string, filename: string): Promise<string> {
-        try {
-            const assetsDir = path.join(process.cwd(), 'assets', 'musics');
-            if (!fs.existsSync(assetsDir)) {
-                fs.mkdirSync(assetsDir, { recursive: true });
-            }
+        const assetsDir = path.join(process.cwd(), 'assets', 'musics');
+        if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
 
-            const filePath = path.join(assetsDir, `${filename}.mp3`);
+        const filePath = path.join(assetsDir, `${filename}.mp3`);
+        const response = await axios({ url, method: 'GET', responseType: 'stream' });
+        const writer = fs.createWriteStream(filePath);
+        response.data.pipe(writer);
 
-            const response = await axios({
-                url,
-                method: 'GET',
-                responseType: 'stream'
+        return new Promise((resolve, reject) => {
+            writer.on('finish', async () => {
+                await SunoMusicModel.findOneAndUpdate(
+                    { sunoId: filename },
+                    { localPath: filePath, updatedAt: new Date() }
+                );
+                resolve(filePath);
             });
-
-            const writer = fs.createWriteStream(filePath);
-
-            response.data.pipe(writer);
-
-            return new Promise((resolve, reject) => {
-                writer.on('finish', async () => {
-                    // Update local path in DB
-                    await SunoMusicModel.findOneAndUpdate({ sunoId: filename }, { localPath: filePath });
-                    resolve(filePath);
-                });
-                writer.on('error', reject);
-            });
-
-        } catch (error) {
-            console.error(`Error downloading file from ${url}:`, error);
-            throw error;
-        }
+            writer.on('error', reject);
+        });
     }
 }
