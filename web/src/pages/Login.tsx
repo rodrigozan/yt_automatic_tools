@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
+import api from '../lib/api';
 
 export const Login: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -15,7 +15,7 @@ export const Login: React.FC = () => {
         e.preventDefault();
         setError('');
         try {
-            const response = await axios.post('http://localhost:4000/api/auth/login', { email, password });
+            const response = await api.post('/auth/login', { email, password });
             login(response.data.user, response.data.token);
             navigate('/');
         } catch (err: any) {
@@ -25,7 +25,7 @@ export const Login: React.FC = () => {
 
     const handleGoogleSuccess = async (credentialResponse: any) => {
         try {
-            const response = await axios.post('http://localhost:4000/api/auth/google', {
+            const response = await api.post('/auth/google', {
                 token: credentialResponse.credential,
             });
             login(response.data.user, response.data.token);

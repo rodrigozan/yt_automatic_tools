@@ -8,33 +8,36 @@ import { Channels } from './pages/Channels';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE"; // User will need to replace this
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 function App() {
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
+    <ThemeProvider>
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
 
-            <Route element={<ProtectedRoute />}>
-              <Route element={<MainLayout />}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/upload" element={<Upload />} />
-                <Route path="/channels" element={<Channels />} />
-                <Route path="/tools" element={<Tools />} />
-                <Route path="/settings" element={<Settings />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<MainLayout />}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/upload" element={<Upload />} />
+                  <Route path="/channels" element={<Channels />} />
+                  <Route path="/tools" element={<Tools />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
               </Route>
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </GoogleOAuthProvider>
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </GoogleOAuthProvider>
+    </ThemeProvider>
   );
 }
 

@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import dotenv from "dotenv";
 
 import { Connection } from '../database/Connection';
@@ -20,6 +21,7 @@ export class Express {
     }
 
     private middleware() {
+        this.server.use(cors());
         this.server.use(express.json());
     }
 
