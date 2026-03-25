@@ -10,6 +10,8 @@ export interface IChannel {
   refreshToken?: string;
   spotifyProfile?: string;
   youtubeChannel?: string;
+  instagramProfile?: string;
+  tiktokProfile?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

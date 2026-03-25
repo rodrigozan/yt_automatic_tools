@@ -55,4 +55,28 @@ export const downloadGDriveFile = async (driveLinkOrId: string, fileName?: strin
     }
 };
 
+/**
+ * List Authorized Channels for a user
+ */
+export const listChannels = async (email: string) => {
+    try {
+        const response = await api.get('/youtube/channels', { params: { email } });
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.error || 'Erro ao listar canais');
+    }
+};
+
+/**
+ * Update Channel details
+ */
+export const updateChannel = async (channelId: string, payload: any) => {
+    try {
+        const response = await api.patch(`/youtube/channels/${channelId}`, payload);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.error || 'Erro ao atualizar canal');
+    }
+};
+
 export default api;

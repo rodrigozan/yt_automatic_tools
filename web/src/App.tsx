@@ -4,6 +4,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Upload } from './pages/Upload';
 import { Tools } from './pages/Tools';
 import { Settings } from './pages/Settings';
+import { Channels } from './pages/Channels';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { AuthProvider } from './contexts/AuthContext';
@@ -25,6 +26,7 @@ function App() {
               <Route element={<MainLayout />}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/upload" element={<Upload />} />
+                <Route path="/channels" element={<Channels />} />
                 <Route path="/tools" element={<Tools />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>

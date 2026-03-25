@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import {
     video,
-    ytAuthorize, ytUploadVideo, ytListChannels,
+    ytAuthorize, ytUploadVideo, ytListChannels, ytUpdateChannel,
     suno,
     videoStoryGenerator, videoMetadataGenerator, videoOrchestrator,
     auth, fileUpload
@@ -17,6 +17,7 @@ router.use(videoStoryGenerator);
 router.use(videoMetadataGenerator);
 router.use(videoOrchestrator);
 router.use(ytListChannels);
+router.use(ytUpdateChannel);
 router.use('/auth', auth);
 router.use(fileUpload);
 

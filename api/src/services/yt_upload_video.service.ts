@@ -55,10 +55,25 @@ export class YtUploadVideoService {
 
       title = result.generatedTitle;
       description = result.generatedDescription;
-      // generatedKeywords é uma string CSV — converte para array de tags
-      tags = result.generatedKeywords
-        ? result.generatedKeywords.split(",").map((t: string) => t.trim()).filter(Boolean)
+      // generatedKeywords é uma string CSV — converte para array de tags e aplica filtros do YouTube
+      let rawTags = result.generatedKeywords
+        ? result.generatedKeywords
+            .replace(/[<>"]/g, "") // YouTube repudia tags com <, > e aspas
+            .split(",")
+            .map((t: string) => t.trim())
+            .filter((t: string) => t.length > 0 && t.length < 50)
         : [];
+        
+      // O YouTube tem um limite de ~400/500 caracteres somando todas as tags
+      let tagsCharCount = 0;
+      const safeTags: string[] = [];
+      for (const tag of rawTags) {
+        if (tagsCharCount + tag.length <= 400) {
+          safeTags.push(tag);
+          tagsCharCount += tag.length + 1;
+        }
+      }
+      tags = safeTags;
     } catch (error) {
       console.warn("⚠️ Falha ao gerar metadados com Groq. Usando fallback.");
       title = "Insira o titulo";
@@ -146,6 +161,15 @@ export class YtUploadVideoService {
     );
 
     //const optimizedDescription = YouTubeService.generateOptimizedDescription(title, channel);
+
+    // 🧹 Sanitiza o título (Remove < >, impede vazio e limita a 90 chars para caber o #Shorts)
+    if (!title || typeof title !== "string" || title.trim() === "") {
+      title = `Vídeo Automático ${Date.now()}`;
+    }
+    title = title.replace(/[<>]/g, "").trim();
+    if (title.length > 85) {
+      title = title.substring(0, 85) + "...";
+    }
 
     // 🩳 Shorts detection
     const isShort =

@@ -10,6 +10,8 @@ export const ChannelSchema = new Schema({
   refreshToken: { type: String },
   spotifyProfile: { type: String },
   youtubeChannel: { type: String },
+  instagramProfile: { type: String },
+  tiktokProfile: { type: String },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

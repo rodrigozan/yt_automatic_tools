@@ -18,9 +18,11 @@ export class MetadataService {
     public async create(data: IMetadataInput): Promise<IMetadataResult> {
         const { theme, niche, musicGenre, language, timestampFile, channelId } = data;
 
-        // 0. Busca dados do canal no banco (spotify e youtube channel)
+        // 0. Busca dados do canal no banco (spotify, youtube, instagram, tiktok)
         let spotifyProfile = '[SPOTIFY PROFILE]';
         let youtubeChannel = '[YOUTUBE CHANNEL]';
+        let instagramProfile = '[INSTAGRAM PROFILE]';
+        let tiktokProfile = '[TIKTOK PROFILE]';
 
         if (channelId) {
             const user = await User.findOne({ 'channels.channelId': channelId });
@@ -29,6 +31,8 @@ export class MetadataService {
                 if (channel) {
                     if (channel.spotifyProfile) spotifyProfile = channel.spotifyProfile;
                     if (channel.youtubeChannel) youtubeChannel = channel.youtubeChannel;
+                    if (channel.instagramProfile) instagramProfile = channel.instagramProfile;
+                    if (channel.tiktokProfile) tiktokProfile = channel.tiktokProfile;
                 }
             }
         }
@@ -56,9 +60,11 @@ export class MetadataService {
         // [A] Contexto (IA)
         let finalDescription = generatedData.description;
 
-        // [B] Links (Listen/Watch) — preenchidos com dados reais do canal
+        // [B] Links — preenchidos com dados reais do canal
         finalDescription += `\n\nlisten in ${spotifyProfile}`;
         finalDescription += `\nwatch in ${youtubeChannel}`;
+        if (instagramProfile !== '[INSTAGRAM PROFILE]') finalDescription += `\nfollow in ${instagramProfile}`;
+        if (tiktokProfile !== '[TIKTOK PROFILE]') finalDescription += `\nfollow in ${tiktokProfile}`;
 
         // [C] Timestamps (do arquivo)
         if (timestampContent) {
@@ -71,10 +77,6 @@ export class MetadataService {
             : "Inscreva-se no canal, ative o sininho 🔔 e curta o vídeo! 👍\nSiga-nos no Instagram e TikTok.";
 
         finalDescription += `\n\n${ctaText}`;
-
-        // [E] Keywords na Descrição (Conforme solicitado)
-        // Nota: Exibe as tags separadas por vírgula dentro da descrição
-        finalDescription += `\n\nKeywords:\n${finalKeywords}`;
 
         // [F] Hashtags (Fim absoluto)
         if (generatedData.hashtags && Array.isArray(generatedData.hashtags)) {
