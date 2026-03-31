@@ -10,5 +10,6 @@ export { default as videoOrchestrator } from './video_orchestrator.router';
 export { default as ytListChannels } from './yt_list_channels.router';
 export { default as ytUpdateChannel } from './yt_update_channel.router';
 export { default as fileUpload } from './file_upload.router';
+export { default as videoIndividualGenerator } from './video_individual_generator.router';
 
 
