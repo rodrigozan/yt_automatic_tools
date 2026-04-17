@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { VideoMusicByFilesGeneratorService } from '../services/video_music_by_files_generator.service';
 import { VideoMusicPlaylistService } from '../services/video_music_playlist_generator.service';
 import { YtUploadVideoService } from '../services/yt_upload_video.service';
+import { PromptGeneratorService } from '../services/prompt_generator.service';
+import { GeminiImageGeneratorService } from '../services/gemini_image_generator.service';
 
 export class GenerateAndUploadVideosController {
     private playlist_service: VideoMusicPlaylistService;
@@ -39,10 +41,20 @@ export class GenerateAndUploadVideosController {
             } = req.body;
 
             // 1. Basic Validation
-            if (!audioDir || !videoDir || !theme || !email || !channelId || !channelType) {
+            if (!audioDir || !theme || !email || !channelId || !channelType) {
                 res.status(400).json({
                     error: 'Faltam parâmetros obrigatórios para geração e upload.'
                 });
+                return;
+            }
+            
+            if (generationSource === 'video' && !videoDir) {
+                res.status(400).json({ error: 'Falta parâmetro obrigatório: videoDir.' });
+                return;
+            }
+            
+            if (generationSource === 'image' && !imageDir) {
+                res.status(400).json({ error: 'Falta parâmetro obrigatório: imageDir.' });
                 return;
             }
 
@@ -53,14 +65,28 @@ export class GenerateAndUploadVideosController {
                 return;
             }
 
-            if (generationSource !== 'video' && generationSource !== 'image') {
+            if (generationSource !== 'video' && generationSource !== 'image' && generationSource !== 'auto_image') {
                 res.status(400).json({
-                    error: 'Parâmetro generationSource inválido: deve ser "video" ou "image".'
+                    error: 'Parâmetro generationSource inválido: deve ser "video", "image" ou "auto_image".'
                 });
                 return;
             }
 
             console.log(`🚀 Iniciando orquestração para tema: ${theme}`);
+
+            let finalImageDir = imageDir;
+
+            if (generationSource === 'auto_image') {
+                console.log(`🤖 Usando Gemini para gerar imagem. Gênero detectado/informado: ${musicGenre || 'Nenhum'}`);
+                const validGenres = ['lofi', 'soul_worship', 'jazz'];
+                const genreToUse = validGenres.includes(musicGenre?.toLowerCase()) ? musicGenre.toLowerCase() : 'lofi';
+                
+                const promptService = new PromptGeneratorService();
+                const imageService = new GeminiImageGeneratorService();
+                const prompt = await promptService.generateDailyPrompt(genreToUse as any);
+                finalImageDir = await imageService.generateImage(prompt, genreToUse);
+                console.log(`✅ Imagem IA gerada em: ${finalImageDir}`);
+            }
 
             // 2. Select Generation Service
             let generationResult: any;
@@ -76,7 +102,7 @@ export class GenerateAndUploadVideosController {
                     generationResult = await this.playlist_service.generate_with_image({
                         audioDir,
                         videoDir,
-                        imageDir,
+                        imageDir: finalImageDir,
                         outputFileName: outputName
                     });
                 }
@@ -91,7 +117,7 @@ export class GenerateAndUploadVideosController {
                     generationResult = await this.by_files_service.generate_with_image({
                         audioDir,
                         videoDir,
-                        imageDir,
+                        imageDir: finalImageDir,
                         outputFileName: outputName
                     });
                 }

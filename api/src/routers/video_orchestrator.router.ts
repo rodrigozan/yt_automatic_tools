@@ -30,7 +30,7 @@ const controller = new GenerateAndUploadVideosController();
  *                 enum: [playlist, files]
  *               generationSource:
  *                 type: string
- *                 enum: [video, image]
+ *                 enum: [video, image, auto_image]
  *               theme:
  *                 type: string
  *               email:

@@ -5,7 +5,8 @@ import {
     suno,
     videoStoryGenerator, videoMetadataGenerator, videoOrchestrator,
     auth, fileUpload,
-    videoIndividualGenerator
+    videoIndividualGenerator,
+    geminiImage
 } from './routers';
 
 const router = Router()
@@ -22,7 +23,6 @@ router.use(ytUpdateChannel);
 router.use('/auth', auth);
 router.use(fileUpload);
 router.use(videoIndividualGenerator);
-
-
+router.use(geminiImage);
 
 export default router

@@ -110,9 +110,9 @@ export function Upload() {
             const payload = {
                 generationType,
                 generationSource,
-                videoDir: serverVideoPath,
-                audioDir: serverAudioPath,
+                ...(generationSource === 'video' && { videoDir: serverVideoPath }),
                 ...(generationSource === 'image' && { imageDir: serverImagePath }),
+                audioDir: serverAudioPath,
                 theme,
                 email,
                 channelId,
@@ -343,7 +343,8 @@ export function Upload() {
                                     onChange={(e) => setGenerationSource(e.target.value)}
                                     options={[
                                         { value: 'video', label: 'Vídeo Base' },
-                                        { value: 'image', label: 'Imagem Estática' }
+                                        { value: 'image', label: 'Imagem Estática' },
+                                        { value: 'auto_image', label: 'Imagem IA (Gemini)' }
                                     ]}
                                 />
                             </div>
@@ -371,7 +372,7 @@ export function Upload() {
                                         gdriveLink={videoGDriveLink}
                                         icon={UploadIcon}
                                     />
-                                ) : (
+                                ) : generationSource === 'image' ? (
                                     <MediaSection
                                         label="Imagem Base"
                                         inputType={imageInputType}
@@ -381,7 +382,7 @@ export function Upload() {
                                         gdriveLink={imageGDriveLink}
                                         icon={Palette}
                                     />
-                                )}
+                                ) : null}
                             </div>
                         </div>
                     </div>
