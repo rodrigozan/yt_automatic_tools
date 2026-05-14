@@ -12,3 +12,4 @@ export { default as ytUpdateChannel } from './yt_update_channel.router';
 export { default as fileUpload } from './file_upload.router';
 export { default as videoIndividualGenerator } from './video_individual_generator.router';
 export { default as geminiImage } from './gemini_image.router';
+export { default as history } from './history.router';

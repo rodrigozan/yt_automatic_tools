@@ -6,7 +6,8 @@ import {
     videoStoryGenerator, videoMetadataGenerator, videoOrchestrator,
     auth, fileUpload,
     videoIndividualGenerator,
-    geminiImage
+    geminiImage,
+    history
 } from './routers';
 
 const router = Router()
@@ -24,5 +25,6 @@ router.use('/auth', auth);
 router.use(fileUpload);
 router.use(videoIndividualGenerator);
 router.use(geminiImage);
+router.use(history);
 
 export default router

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import api from '../lib/api';
 
 export const Signup: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -15,7 +15,7 @@ export const Signup: React.FC = () => {
         e.preventDefault();
         setError('');
         try {
-            const response = await axios.post('http://localhost:4000/api/auth/register', { email, password, name });
+            const response = await api.post('/auth/register', { email, password, name });
             login(response.data.user, response.data.token);
             navigate('/');
         } catch (err: any) {

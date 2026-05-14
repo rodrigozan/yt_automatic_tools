@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 import { VideoMusicByFilesGeneratorService } from '../services/video_music_by_files_generator.service';
 import { VideoMusicPlaylistService } from '../services/video_music_playlist_generator.service';
 import { YtUploadVideoService } from '../services/yt_upload_video.service';
@@ -22,11 +24,12 @@ export class GenerateAndUploadVideosController {
             const {
                 // Generation Params
                 audioDir,
+                audioDirs,   // array sent by frontend when generationType === 'files'
                 videoDir,
                 imageDir,
                 outputName,
                 generationType, // 'playlist' | 'files'
-                generationSource, // 'video' | 'image'
+                generationSource, // 'video' | 'image' | 'auto_image'
 
                 // Upload Params
                 theme,
@@ -41,18 +44,32 @@ export class GenerateAndUploadVideosController {
             } = req.body;
 
             // 1. Basic Validation
-            if (!audioDir || !theme || !email || !channelId || !channelType) {
+            if (!theme || !email || !channelId || !channelType) {
                 res.status(400).json({
-                    error: 'Faltam parâmetros obrigatórios para geração e upload.'
+                    error: 'Faltam parâmetros obrigatórios: theme, email, channelId, channelType.'
                 });
                 return;
             }
-            
+
+            if (generationType === 'files') {
+                if (!audioDirs || !Array.isArray(audioDirs) || audioDirs.length === 0) {
+                    res.status(400).json({
+                        error: 'Falta parâmetro obrigatório: audioDirs deve ser um array não vazio para generationType=files.'
+                    });
+                    return;
+                }
+            } else {
+                if (!audioDir) {
+                    res.status(400).json({ error: 'Falta parâmetro obrigatório: audioDir.' });
+                    return;
+                }
+            }
+
             if (generationSource === 'video' && !videoDir) {
                 res.status(400).json({ error: 'Falta parâmetro obrigatório: videoDir.' });
                 return;
             }
-            
+
             if (generationSource === 'image' && !imageDir) {
                 res.status(400).json({ error: 'Falta parâmetro obrigatório: imageDir.' });
                 return;
@@ -80,7 +97,7 @@ export class GenerateAndUploadVideosController {
                 console.log(`🤖 Usando Gemini para gerar imagem. Gênero detectado/informado: ${musicGenre || 'Nenhum'}`);
                 const validGenres = ['lofi', 'soul_worship', 'jazz'];
                 const genreToUse = validGenres.includes(musicGenre?.toLowerCase()) ? musicGenre.toLowerCase() : 'lofi';
-                
+
                 const promptService = new PromptGeneratorService();
                 const imageService = new GeminiImageGeneratorService();
                 const prompt = await promptService.generateDailyPrompt(genreToUse as any);
@@ -88,20 +105,46 @@ export class GenerateAndUploadVideosController {
                 console.log(`✅ Imagem IA gerada em: ${finalImageDir}`);
             }
 
-            // 2. Select Generation Service
+            // 2. For 'files' mode: organize individual file paths into a session directory
+            //    The services expect a directory — audioDir must contain .mp3 files,
+            //    videoDir must contain video_base.mp4
+            let finalAudioDir: string = audioDir;
+            let finalVideoDir: string = videoDir;
+
+            if (generationType === 'files') {
+                const sessionDir = path.resolve(__dirname, '../../temp_uploads', `session_${Date.now()}`);
+                fs.mkdirSync(sessionDir, { recursive: true });
+
+                for (const filePath of (audioDirs as string[])) {
+                    const basename = path.basename(filePath);
+                    // Strip the multer upload prefix (<timestamp>-<random>-)
+                    const cleanName = basename.replace(/^\d+-\d+-/, '');
+                    fs.copyFileSync(filePath, path.join(sessionDir, cleanName));
+                }
+
+                if (generationSource === 'video' && videoDir) {
+                    fs.copyFileSync(videoDir as string, path.join(sessionDir, 'video_base.mp4'));
+                }
+
+                finalAudioDir = sessionDir;
+                finalVideoDir = sessionDir;
+                console.log(`📁 Diretório de sessão criado: ${sessionDir}`);
+            }
+
+            // 3. Select Generation Service
             let generationResult: any;
 
             if (generationType === 'playlist') {
                 if (generationSource === 'video') {
                     generationResult = await this.playlist_service.generate_with_video({
-                        audioDir,
-                        videoDir,
+                        audioDir: finalAudioDir,
+                        videoDir: finalVideoDir,
                         outputFileName: outputName
                     });
                 } else {
                     generationResult = await this.playlist_service.generate_with_image({
-                        audioDir,
-                        videoDir,
+                        audioDir: finalAudioDir,
+                        videoDir: finalVideoDir,
                         imageDir: finalImageDir,
                         outputFileName: outputName
                     });
@@ -109,14 +152,14 @@ export class GenerateAndUploadVideosController {
             } else { // generationType === 'files'
                 if (generationSource === 'video') {
                     generationResult = await this.by_files_service.generate_with_video({
-                        audioDir,
-                        videoDir,
+                        audioDir: finalAudioDir,
+                        videoDir: finalVideoDir,
                         outputFileName: outputName
                     });
                 } else {
                     generationResult = await this.by_files_service.generate_with_image({
-                        audioDir,
-                        videoDir,
+                        audioDir: finalAudioDir,
+                        videoDir: finalVideoDir,
                         imageDir: finalImageDir,
                         outputFileName: outputName
                     });

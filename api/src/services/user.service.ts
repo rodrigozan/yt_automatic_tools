@@ -3,6 +3,13 @@ import { User } from "../models/user.model"; // Ajuste o import conforme seu mod
 export class UserService {
 
     /**
+     * Busca usuário por email
+     */
+    async findByEmail(email: string) {
+        return User.findOne({ email });
+    }
+
+    /**
      * Busca um usuário pelo email. Se não existir, cria um novo.
      */
     async findOrCreate(email: string) {

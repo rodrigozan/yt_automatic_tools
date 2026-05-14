@@ -1,4 +1,4 @@
-import { Home, Upload, Box, Settings, LogOut, Youtube } from 'lucide-react';
+import { Home, Upload, Box, Settings, LogOut, Youtube, History } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,6 +16,7 @@ export function Sidebar() {
         { to: '/', icon: Home, label: 'Dashboard' },
         { to: '/upload', icon: Upload, label: 'Upload' },
         { to: '/channels', icon: Youtube, label: 'Channels' },
+        { to: '/history', icon: History, label: 'History' },
         { to: '/tools', icon: Box, label: 'Tools' },
         { to: '/settings', icon: Settings, label: 'Settings' },
     ];

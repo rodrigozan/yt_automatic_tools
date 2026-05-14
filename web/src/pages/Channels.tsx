@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Youtube, Save, Loader2, ExternalLink, Music, History, Mic, Settings2 } from 'lucide-react';
-import { listChannels, updateChannel } from '../lib/api';
+import { Youtube, Save, Loader2, ExternalLink, Music, History, Mic, Settings2, RefreshCw } from 'lucide-react';
+import { listChannels, updateChannel, refreshYoutubeToken, getYouTubeAuthUrl } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Channel {
@@ -22,6 +22,7 @@ export function Channels() {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState<string | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -62,6 +63,37 @@ export function Channels() {
         setChannels(prev => prev.map(c => 
             c.channelId === channelId ? { ...c, [field]: value } : c
         ));
+    };
+
+    const handleRefreshToken = async (channelId: string, channelName: string) => {
+        if (!user?.email) return;
+        try {
+            setIsRefreshing(channelId);
+            setError(null);
+            setSuccessMessage(null);
+            await refreshYoutubeToken(channelId, user.email);
+            setSuccessMessage(`Token do canal "${channelName}" atualizado com sucesso!`);
+            fetchChannels();
+        } catch (err: any) {
+            const errorMessage = err.response?.data?.error || err.message || '';
+            if (err.response?.data?.needsReconnect || errorMessage.includes('reconecte')) {
+                try {
+                    const authUrl = await getYouTubeAuthUrl(user.email);
+                    if (authUrl) {
+                        window.open(authUrl, '_blank', 'width=600,height=700');
+                        setSuccessMessage(`Abra a janela de autorização do Google para o canal "${channelName}".`);
+                    } else {
+                        setError(`Token expirado. Gere um novo link de autorização.`);
+                    }
+                } catch (authErr: any) {
+                    setError(`Token expirado. Tente gerar novo link de autorização.`);
+                }
+            } else {
+                setError(errorMessage);
+            }
+        } finally {
+            setIsRefreshing(null);
+        }
     };
 
     if (isLoading) {
@@ -119,6 +151,18 @@ export function Channels() {
                                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${channel.refreshToken === '✅ Active' ? 'bg-green-500/10 text-green-600' : 'bg-destructive/10 text-destructive'}`}>
                                         {channel.refreshToken === '✅ Active' ? 'Ativo' : 'Inativo'}
                                     </span>
+                                    <button
+                                        onClick={() => handleRefreshToken(channel.channelId, channel.channelName)}
+                                        disabled={isRefreshing === channel.channelId}
+                                        title="Atualizar token do YouTube"
+                                        className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary disabled:opacity-50 transition-all"
+                                    >
+                                        {isRefreshing === channel.channelId ? (
+                                            <Loader2 className="animate-spin" size={14} />
+                                        ) : (
+                                            <RefreshCw size={14} />
+                                        )}
+                                    </button>
                                 </div>
                             </div>
                             

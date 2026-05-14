@@ -1,10 +1,7 @@
 import axios from 'axios';
 
-// Update line if deployed to a different environment
-const API_BASE_URL = 'http://localhost:4500/api';
-
 const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: '/api',
 });
 
 /**
@@ -76,6 +73,64 @@ export const updateChannel = async (channelId: string, payload: any) => {
         return response.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.error || 'Erro ao atualizar canal');
+    }
+};
+
+/**
+ * Refresh YouTube Access Token
+ */
+export const refreshYoutubeToken = async (channelId: string, email: string) => {
+    const response = await api.post('/youtube/refresh-token', { channelId, email });
+    return response.data;
+};
+
+/**
+ * Get YouTube Authorization URL
+ */
+export const getYouTubeAuthUrl = async (email: string) => {
+    try {
+        const response = await api.get('/youtube/auth', { params: { email } });
+        return response.data?.url || response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.error || 'Erro ao obter URL de autorização');
+    }
+};
+
+/**
+ * Get published videos history
+ */
+export const getPublishedVideos = async (email: string, channelId?: string) => {
+    try {
+        const params: any = { email };
+        if (channelId) params.channelId = channelId;
+        const response = await api.get('/history/videos', { params });
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.error || 'Erro ao buscar histórico');
+    }
+};
+
+/**
+ * Refresh video stats from YouTube API
+ */
+export const refreshVideoStats = async (email: string, videoId?: string) => {
+    try {
+        const response = await api.post('/history/videos/refresh', { email, videoId });
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.error || 'Erro ao atualizar estatísticas');
+    }
+};
+
+/**
+ * Get single video details
+ */
+export const getVideoDetails = async (videoId: string) => {
+    try {
+        const response = await api.get(`/history/videos/${videoId}`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.error || 'Erro ao buscar vídeo');
     }
 };
 

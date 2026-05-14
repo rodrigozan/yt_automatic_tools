@@ -46,4 +46,6 @@ router.get("/youtube/auth", YtAuthorizeChannelsController.auth);
  */
 router.get("/youtube/oauth2callback", YtAuthorizeChannelsController.callback);
 
+router.post("/youtube/refresh-token", YtAuthorizeChannelsController.refreshToken);
+
 export default router;

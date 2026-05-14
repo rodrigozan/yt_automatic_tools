@@ -1,6 +1,7 @@
 import fs from "fs";
 import { google } from "googleapis";
 import { config } from "dotenv";
+import { PublishedVideoModel } from "../models/published_video.model";
 
 /* --- Models --- */
 import { User } from "../models/user.model";
@@ -219,6 +220,18 @@ export class YtUploadVideoService {
         "🔗 Link:",
         `https://youtube.com/watch?v=${response.data.id}`
       );
+
+      await PublishedVideoModel.create({
+        videoId: response.data.id,
+        channelId: channelId || channel?.channelId || "",
+        channelName: channel?.channelName || "",
+        title: response.data.snippet?.title || title,
+        description: response.data.snippet?.description || description,
+        tags: tags,
+        thumbnailUrl: response.data.snippet?.thumbnails?.high?.url || "",
+        youtubeUrl: `https://youtube.com/watch?v=${response.data.id}`,
+        publishedAt: new Date(),
+      });
 
       return response.data;
 
