@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(cd \"D:\\\\dev\\\\yt_automatic_tools\\\\api\" && npx tsc --noEmit 2>&1)",
-      "Bash(journalctl *)"
+      "Bash(journalctl *)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(mkdir -p /tmp/yt_design)",
+      "Bash(tar -xf \"/root/.claude/projects/-root-projects-yt-automatic-tools/892560fb-91c0-4557-8c79-3a00f6ab6776/tool-results/webfetch-1778781524683-4jk1pt.bin\" -C /tmp/yt_design)",
+      "Bash(xargs ls)",
+      "Bash(npx tsc *)"
     ]
   }
 }
