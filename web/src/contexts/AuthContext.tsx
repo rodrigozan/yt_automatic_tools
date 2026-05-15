@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
     id: string;
@@ -17,39 +17,47 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEMO_USER = { id: 'demo', email: 'demo@example.com', name: 'Demo User' };
-const DEMO_TOKEN = 'demo-token';
+function isTokenExpired(token: string): boolean {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp * 1000 < Date.now();
+    } catch {
+        return true;
+    }
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<User | null>((() => {
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-            try { return JSON.parse(savedUser); } catch { return DEMO_USER; }
+    const [user, setUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        if (storedToken && storedUser && !isTokenExpired(storedToken)) {
+            setToken(storedToken);
+            setUser(JSON.parse(storedUser));
+        } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
         }
-        return DEMO_USER;
-    })());
+    }, []);
 
-    const [token, setToken] = useState<string | null>(() => {
-        const savedToken = localStorage.getItem('token');
-        return savedToken || DEMO_TOKEN;
-    });
-
-    const login = (newUser: User, newToken: string) => {
-        setUser(newUser);
-        setToken(newToken);
-        localStorage.setItem('user', JSON.stringify(newUser));
-        localStorage.setItem('token', newToken);
+    const login = (user: User, token: string) => {
+        setUser(user);
+        setToken(token);
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
     };
 
     const logout = () => {
-        setUser(DEMO_USER);
-        setToken(DEMO_TOKEN);
-        localStorage.setItem('user', JSON.stringify(DEMO_USER));
-        localStorage.setItem('token', DEMO_TOKEN);
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: true }}>
+        <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
             {children}
         </AuthContext.Provider>
     );

@@ -20,7 +20,7 @@ export class AuthService {
             email: user.email,
         };
         return jwt.sign(payload, process.env.JWT_SECRET || "secret", {
-            expiresIn: "7d",
+            expiresIn: "30d",
         });
     }
 
