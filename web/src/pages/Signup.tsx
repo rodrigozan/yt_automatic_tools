@@ -46,7 +46,7 @@ export const Signup: React.FC = () => {
                         </div>
                         <div>
                             <input
-                                type="email"
+                                type="text"
                                 required
                                 className="relative block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:text-sm"
                                 placeholder="Email address"

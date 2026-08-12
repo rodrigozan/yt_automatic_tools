@@ -30,6 +30,10 @@ export class HistoryService {
     const user = await User.findOne({ email }).lean();
     if (!user) return [];
 
+    if (user.role === "admin") {
+      return PublishedVideoModel.find({}).sort({ publishedAt: -1 }).lean();
+    }
+
     const channelIds = user.channels.map((c: any) => c.channelId);
     return PublishedVideoModel.find({ channelId: { $in: channelIds } })
       .sort({ publishedAt: -1 })

@@ -3,7 +3,12 @@ import { IChannel } from "../interfaces/global.interface";
 
 export class YtUpdateChannelService {
   static async updateChannel(email: string, channelId: string, updateData: Partial<IChannel>) {
-    const user = await (User as any).findOne({ email, "channels.channelId": channelId });
+    const requester = await (User as any).findOne({ email });
+    const isAdmin = requester?.role === "admin";
+
+    const user = isAdmin
+      ? await (User as any).findOne({ "channels.channelId": channelId })
+      : await (User as any).findOne({ email, "channels.channelId": channelId });
 
     if (!user) {
       throw new Error("Usuário ou canal não encontrado.");

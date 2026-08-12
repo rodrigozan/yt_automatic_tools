@@ -56,7 +56,7 @@ export function Upload() {
         if (!Array.isArray(channels)) return;
         const channel = channels.find(c => c.channelId === selectedId);
         if (channel) {
-            setEmail(user?.email || '');
+            setEmail(channel.ownerEmail || user?.email || '');
             setChannelType(channel.channelType || 'music');
             setChannelLang(channel.channelLang || 'pt');
             setNiche(channel.channelGenre || '');

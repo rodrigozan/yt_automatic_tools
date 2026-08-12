@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema({
   googleId: { type: String },
   name: { type: String },
   picture: { type: String },
+  role: { type: String, enum: ["user", "admin"], default: "user" },
   channels: [ChannelSchema],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

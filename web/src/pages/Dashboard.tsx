@@ -1,22 +1,78 @@
-import { Upload, Youtube, Clock, BarChart2, Video, TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Youtube, BarChart2, Video, ThumbsUp, Loader2 } from 'lucide-react';
+import { listChannels, getPublishedVideos } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
-const stats = [
-    { label: 'Total Uploads', value: '1,234', change: '+12%', icon: Upload },
-    { label: 'Active Channels', value: '5', change: '+1', icon: Youtube },
-    { label: 'Videos Published', value: '48', change: '+3.2%', icon: Video },
-    { label: 'Scheduled', value: '12', change: '+5', icon: Clock },
-];
+interface PublishedVideo {
+    channelId: string;
+    viewCount?: number;
+    likeCount?: number;
+    commentCount?: number;
+    publishedAt?: string;
+}
 
-const weeklyBars = [40, 65, 55, 80, 70, 88, 60];
-const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-const quickMetrics = [
-    { label: 'Total Views', value: '24.5K', icon: BarChart2 },
-    { label: 'Subscribers', value: '1.2K', icon: TrendingUp },
-    { label: 'In Queue', value: '7', icon: Clock },
-];
+const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export function Dashboard() {
+    const { user } = useAuth();
+    const [channelCount, setChannelCount] = useState(0);
+    const [videos, setVideos] = useState<PublishedVideo[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!user?.email) return;
+            try {
+                setIsLoading(true);
+                const [channelsData, videosData] = await Promise.all([
+                    listChannels(user.email),
+                    getPublishedVideos(user.email),
+                ]);
+                setChannelCount(channelsData.channels?.length || 0);
+                setVideos(videosData.videos || []);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, [user?.email]);
+
+    const totalViews = videos.reduce((sum, v) => sum + (v.viewCount || 0), 0);
+    const totalLikes = videos.reduce((sum, v) => sum + (v.likeCount || 0), 0);
+    const totalComments = videos.reduce((sum, v) => sum + (v.commentCount || 0), 0);
+
+    const now = new Date();
+    const weeklyCounts = weekDays.map((_, i) => {
+        return videos.filter((v) => {
+            if (!v.publishedAt) return false;
+            const d = new Date(v.publishedAt);
+            const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+            return diffDays >= 0 && diffDays < 7 && d.getDay() === i;
+        }).length;
+    });
+    const maxCount = Math.max(1, ...weeklyCounts);
+
+    const stats = [
+        { label: 'Canais Ativos', value: String(channelCount), icon: Youtube },
+        { label: 'Vídeos Publicados', value: String(videos.length), icon: Video },
+        { label: 'Total de Views', value: totalViews.toLocaleString('pt-BR'), icon: BarChart2 },
+        { label: 'Total de Likes', value: totalLikes.toLocaleString('pt-BR'), icon: ThumbsUp },
+    ];
+
+    const quickMetrics = [
+        { label: 'Total de Views', value: totalViews.toLocaleString('pt-BR'), icon: BarChart2 },
+        { label: 'Total de Comentários', value: totalComments.toLocaleString('pt-BR'), icon: ThumbsUp },
+        { label: 'Vídeos Publicados', value: String(videos.length), icon: Video },
+    ];
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="animate-spin text-primary" size={32} />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
             {/* Header */}
@@ -27,9 +83,15 @@ export function Dashboard() {
                 </span>
             </div>
 
+            {channelCount === 0 && (
+                <div className="glass rounded-2xl p-5 text-sm text-muted-foreground">
+                    Nenhum canal vinculado ainda. Acesse a página de Canais para autorizar um canal do YouTube.
+                </div>
+            )}
+
             {/* Stat cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {stats.map(({ label, value, change, icon: Icon }) => (
+                {stats.map(({ label, value, icon: Icon }) => (
                     <div key={label} className="glass rounded-2xl p-5 space-y-3">
                         <div className="flex items-center justify-between">
                             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
@@ -38,7 +100,6 @@ export function Dashboard() {
                             <Icon className="w-4 h-4 text-muted-foreground" />
                         </div>
                         <p className="text-2xl font-bold">{value}</p>
-                        <p className="text-xs text-primary font-medium">{change}</p>
                     </div>
                 ))}
             </div>
@@ -48,18 +109,18 @@ export function Dashboard() {
                 {/* Activity chart — 2 cols */}
                 <div className="lg:col-span-2 glass rounded-2xl p-5 space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="font-semibold text-sm">Upload Activity</h2>
-                        <span className="text-xs text-muted-foreground">Weekly</span>
+                        <h2 className="font-semibold text-sm">Atividade de Upload</h2>
+                        <span className="text-xs text-muted-foreground">Últimos 7 dias</span>
                     </div>
                     <div className="flex items-end gap-2 h-28">
-                        {weeklyBars.map((h, i) => (
+                        {weeklyCounts.map((count, i) => (
                             <div
                                 key={i}
                                 className="flex-1 rounded-lg bg-white/[0.05] flex items-end overflow-hidden"
                             >
                                 <div
                                     className="w-full rounded-lg bg-primary/50 transition-all duration-500"
-                                    style={{ height: `${h}%` }}
+                                    style={{ height: `${(count / maxCount) * 100}%` }}
                                 />
                             </div>
                         ))}

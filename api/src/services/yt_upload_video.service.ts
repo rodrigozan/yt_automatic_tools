@@ -115,8 +115,8 @@ export class YtUploadVideoService {
       throw new Error(`Arquivo de vídeo não encontrado: ${videoPath}`);
 
     let channel: any = null;
-    if (email && channelId) {
-      const user = await User.findOne({ email });
+    if (channelId) {
+      const user = await User.findOne({ "channels.channelId": channelId });
       channel = user?.channels.find((c) => c.channelId === channelId);
     }
     if (!channel) channel = { genre: channelLang || "en" };

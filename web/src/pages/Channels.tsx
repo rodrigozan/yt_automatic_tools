@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Youtube, Save, Loader2, ExternalLink, Music, History, Mic, Settings2, RefreshCw } from 'lucide-react';
+import { Youtube, Save, Loader2, ExternalLink, Music, History, Mic, Settings2, RefreshCw, Plus } from 'lucide-react';
 import { listChannels, updateChannel, refreshYoutubeToken, getYouTubeAuthUrl } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -15,14 +15,16 @@ interface Channel {
     instagramProfile?: string;
     tiktokProfile?: string;
     refreshToken: string;
+    ownerEmail?: string;
 }
 
 export function Channels() {
-    const { user } = useAuth();
+    const { user, isAdmin } = useAuth();
     const [channels, setChannels] = useState<Channel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState<string | null>(null);
     const [isRefreshing, setIsRefreshing] = useState<string | null>(null);
+    const [isLinking, setIsLinking] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -96,6 +98,26 @@ export function Channels() {
         }
     };
 
+    const handleLinkChannel = async () => {
+        if (!user?.email) return;
+        try {
+            setIsLinking(true);
+            setError(null);
+            setSuccessMessage(null);
+            const authUrl = await getYouTubeAuthUrl(user.email);
+            if (authUrl) {
+                window.open(authUrl, '_blank', 'width=600,height=700');
+                setSuccessMessage('Abra a janela de autorização do Google para vincular o novo canal.');
+            } else {
+                setError('Não foi possível obter o link de autorização.');
+            }
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsLinking(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -107,13 +129,30 @@ export function Channels() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold tracking-tight">Canais Autorizados</h2>
-                <button 
-                    onClick={fetchChannels}
-                    className="text-sm text-primary hover:underline"
-                >
-                    Recarregar
-                </button>
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Canais Autorizados</h2>
+                    {isAdmin && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Modo admin: exibindo canais de todas as contas.
+                        </p>
+                    )}
+                </div>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={fetchChannels}
+                        className="text-sm text-primary hover:underline"
+                    >
+                        Recarregar
+                    </button>
+                    <button
+                        onClick={handleLinkChannel}
+                        disabled={isLinking}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 disabled:opacity-50 transition-all shadow-sm"
+                    >
+                        {isLinking ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
+                        Vincular Canal
+                    </button>
+                </div>
             </div>
 
             {error && (
@@ -131,7 +170,15 @@ export function Channels() {
             {channels.length === 0 ? (
                 <div className="text-center py-12 bg-card rounded-xl border border-dashed border-border">
                     <Youtube className="mx-auto text-muted-foreground mb-4" size={48} />
-                    <p className="text-muted-foreground">Nenhum canal autorizado encontrado.</p>
+                    <p className="text-muted-foreground mb-4">Nenhum canal autorizado encontrado.</p>
+                    <button
+                        onClick={handleLinkChannel}
+                        disabled={isLinking}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 disabled:opacity-50 transition-all shadow-sm"
+                    >
+                        {isLinking ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
+                        Vincular Canal
+                    </button>
                 </div>
             ) : (
                 <div className="grid gap-6">
@@ -145,6 +192,9 @@ export function Channels() {
                                     <div>
                                         <h3 className="font-bold">{channel.channelName}</h3>
                                         <p className="text-xs text-muted-foreground">{channel.channelNickname} • {channel.channelId}</p>
+                                        {isAdmin && channel.ownerEmail && (
+                                            <p className="text-[10px] text-primary font-medium mt-0.5">Dono: {channel.ownerEmail}</p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">

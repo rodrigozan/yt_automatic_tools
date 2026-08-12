@@ -62,11 +62,17 @@ export class YtAuthorizeChannelsController {
       }
 
       const userService = new UserService();
-      const user = await userService.findByEmail(email);
+      const requester = await userService.findByEmail(email);
 
-      if (!user) {
+      if (!requester) {
         return res.status(404).json({ error: "Usuário não encontrado." });
       }
+
+      const { User } = await import("../models/user.model");
+      const user =
+        requester.role === "admin"
+          ? (await User.findOne({ "channels.channelId": channelId })) || requester
+          : requester;
 
       const channel = user.channels.find((c: any) => c.channelId === channelId);
 
