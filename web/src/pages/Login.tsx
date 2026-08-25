@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import api from '../lib/api';
+import { isValidEmail } from '../lib/validators';
 
 export const Login: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -14,6 +15,10 @@ export const Login: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        if (!isValidEmail(email)) {
+            setError('Informe um e-mail válido.');
+            return;
+        }
         try {
             const response = await api.post('/auth/login', { email, password });
             login(response.data.user, response.data.token);
@@ -48,7 +53,7 @@ export const Login: React.FC = () => {
                     <div className="space-y-4 rounded-md shadow-sm">
                         <div>
                             <input
-                                type="text"
+                                type="email"
                                 required
                                 className="relative block w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent sm:text-sm"
                                 placeholder="Email address"

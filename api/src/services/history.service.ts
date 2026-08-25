@@ -2,7 +2,7 @@ import { PublishedVideoModel } from "../models/published_video.model";
 
 export class HistoryService {
   static async saveVideo(data: {
-    youtubeVideoId: string;
+    videoId: string;
     channelId: string;
     channelName?: string;
     title?: string;
@@ -12,7 +12,7 @@ export class HistoryService {
     youtubeUrl?: string;
     publishedAt?: Date;
   }) {
-    const existing = await PublishedVideoModel.findOne({ youtubeVideoId: data.youtubeVideoId });
+    const existing = await PublishedVideoModel.findOne({ videoId: data.videoId });
     if (existing) return existing;
 
     const video = new PublishedVideoModel(data);
@@ -40,11 +40,11 @@ export class HistoryService {
       .lean();
   }
 
-  static async getVideoStats(youtubeVideoId: string) {
+  static async getVideoStats(videoId: string) {
     const { google } = await import("googleapis");
     const { User } = await import("../models/user.model");
 
-    const video = await PublishedVideoModel.findOne({ youtubeVideoId }).lean();
+    const video = await PublishedVideoModel.findOne({ videoId }).lean();
     if (!video) return null;
 
     const user = await User.findOne({ "channels.channelId": video.channelId }).lean();
@@ -63,7 +63,7 @@ export class HistoryService {
     const youtube = google.youtube({ version: "v3", auth: oauth2Client });
     const response = await youtube.videos.list({
       part: ["statistics", "snippet"],
-      id: [youtubeVideoId],
+      id: [videoId],
     });
 
     const item = response.data.items?.[0];
@@ -75,7 +75,7 @@ export class HistoryService {
       video.title = item.snippet?.title;
       video.description = item.snippet?.description;
       video.publishedAt = item.snippet?.publishedAt ? new Date(item.snippet.publishedAt) : video.publishedAt;
-      await PublishedVideoModel.updateOne({ youtubeVideoId }, video);
+      await PublishedVideoModel.updateOne({ videoId }, video);
     }
 
     return video;
@@ -84,7 +84,7 @@ export class HistoryService {
   static async refreshAllStats(email: string) {
     const videos = await this.getVideosByUser(email);
     const results = await Promise.allSettled(
-      videos.map((v) => this.getVideoStats(v.youtubeVideoId))
+      videos.map((v) => this.getVideoStats(v.videoId))
     );
     return { total: videos.length, updated: results.filter((r) => r.status === "fulfilled").length };
   }

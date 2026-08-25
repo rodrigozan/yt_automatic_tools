@@ -5,7 +5,7 @@ import { User } from "../models/user.model";
 
 dotenv.config();
 
-const MASTER_EMAIL = "admin_dev@yt_automatic_tools.com";
+const MASTER_EMAIL = "adminDev@ytautomatictools.com";
 const MASTER_PASSWORD = "123";
 
 async function createMasterUser() {

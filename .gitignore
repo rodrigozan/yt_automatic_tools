@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+phanterai_vps_key
+phanterai_vps_key.pub
+*.pem
+*.key

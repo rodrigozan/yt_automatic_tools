@@ -48,7 +48,7 @@ export class HistoryController {
   static async getVideo(req: Request, res: Response) {
     try {
       const { videoId } = req.params;
-      const video = await HistoryService.getVideoStats(videoId);
+      const video = await HistoryService.getVideoStats(String(videoId));
       if (!video) return res.status(404).json({ error: "Vídeo não encontrado" });
       return res.json({ video });
     } catch (err: any) {

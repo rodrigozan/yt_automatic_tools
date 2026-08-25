@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { AuthService } from "../services/auth.service";
 import { User } from "../models/user.model";
+import { validateEmail } from "../utils/validate_email.utils";
 
 const authService = new AuthService();
 
@@ -8,6 +9,10 @@ export class AuthController {
     async register(req: Request, res: Response) {
         try {
             const { email, password, name } = req.body;
+
+            if (!validateEmail(email)) {
+                return res.status(400).json({ message: "E-mail inválido" });
+            }
 
             const existingUser = await User.findOne({ email });
             if (existingUser) {
@@ -31,6 +36,10 @@ export class AuthController {
     async login(req: Request, res: Response) {
         try {
             const { email, password } = req.body;
+
+            if (!validateEmail(email)) {
+                return res.status(400).json({ message: "E-mail inválido" });
+            }
 
             const user: any = await User.findOne({ email });
             if (!user || !user.password) {
