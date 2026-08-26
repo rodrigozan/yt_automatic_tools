@@ -1,4 +1,5 @@
-import { Home, Upload, Box, Settings, LogOut, Youtube, History } from 'lucide-react';
+import { useState } from 'react';
+import { Home, Upload, Box, Settings, LogOut, Youtube, History, Menu, X } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 export function Sidebar() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -22,7 +24,104 @@ export function Sidebar() {
     ];
 
     return (
-        <aside className="w-16 h-screen flex-col items-center py-6 border-r border-white/[0.06] bg-white/[0.02] hidden md:flex">
+        <>
+            {/* Mobile top bar */}
+            <div className="md:hidden fixed top-0 inset-x-0 h-14 flex items-center justify-between px-4 border-b border-white/[0.06] bg-background/95 backdrop-blur z-40">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                        <Youtube className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="font-bold text-sm">YT Automatic Tools</span>
+                </div>
+                <button
+                    onClick={() => setIsMobileOpen(true)}
+                    aria-label="Abrir menu"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-white/[0.06] hover:text-foreground transition-all"
+                >
+                    <Menu className="w-5 h-5" />
+                </button>
+            </div>
+
+            {/* Mobile drawer overlay */}
+            {isMobileOpen && (
+                <div
+                    className="md:hidden fixed inset-0 bg-black/60 z-40"
+                    onClick={() => setIsMobileOpen(false)}
+                />
+            )}
+
+            {/* Mobile drawer */}
+            <aside
+                className={cn(
+                    'md:hidden fixed inset-y-0 left-0 w-64 flex flex-col py-6 px-4 border-r border-white/[0.06] bg-background z-50 transition-transform duration-300',
+                    isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+                )}
+            >
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center">
+                            <Youtube className="w-5 h-5 text-primary" />
+                        </div>
+                        <span className="font-bold">YT Automatic Tools</span>
+                    </div>
+                    <button
+                        onClick={() => setIsMobileOpen(false)}
+                        aria-label="Fechar menu"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-white/[0.06] hover:text-foreground transition-all"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <nav className="flex-1 flex flex-col gap-1">
+                    {navItems.map((item) => (
+                        <NavLink
+                            key={item.to}
+                            to={item.to}
+                            end={item.to === '/'}
+                            onClick={() => setIsMobileOpen(false)}
+                            className={({ isActive }) =>
+                                cn(
+                                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                                    isActive
+                                        ? 'bg-primary/15 text-primary'
+                                        : 'text-muted-foreground hover:bg-white/[0.06] hover:text-foreground'
+                                )
+                            }
+                        >
+                            <item.icon className="w-[18px] h-[18px]" />
+                            {item.label}
+                        </NavLink>
+                    ))}
+                </nav>
+
+                <div className="flex items-center gap-3 pt-4 border-t border-white/[0.06]">
+                    {user?.picture ? (
+                        <img
+                            src={user.picture}
+                            alt={user.name}
+                            className="w-8 h-8 rounded-full ring-2 ring-white/10 object-cover"
+                        />
+                    ) : (
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold ring-2 ring-white/10">
+                            {user?.name?.[0] || user?.email[0].toUpperCase()}
+                        </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{user?.name || user?.email}</p>
+                    </div>
+                    <button
+                        onClick={handleLogout}
+                        title="Sign out"
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 shrink-0"
+                    >
+                        <LogOut className="w-[18px] h-[18px]" />
+                    </button>
+                </div>
+            </aside>
+
+            {/* Desktop sidebar */}
+            <aside className="w-16 h-screen flex-col items-center py-6 border-r border-white/[0.06] bg-white/[0.02] hidden md:flex">
             {/* Logo */}
             <div className="mb-8">
                 <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center">
@@ -78,5 +177,6 @@ export function Sidebar() {
                 )}
             </div>
         </aside>
+        </>
     );
 }
