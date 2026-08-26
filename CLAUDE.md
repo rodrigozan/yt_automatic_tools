@@ -26,11 +26,11 @@ yarn fetch_telegram_videos  # one-off script via ts-node
 ### Web (run from `web/`)
 
 ```bash
-npm install           # install deps
-npm run dev           # start Vite dev server on port 3006
-npm run build         # tsc -b && vite build
-npm run lint          # eslint
-npm run preview       # preview production build
+yarn install          # install deps
+yarn dev              # start Vite dev server on port 3006
+yarn build            # tsc -b && vite build
+yarn lint             # eslint
+yarn preview          # preview production build
 ```
 
 ### Utility Scripts (run from `api/`)
