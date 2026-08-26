@@ -97,6 +97,30 @@ export const getYouTubeAuthUrl = async (email: string) => {
 };
 
 /**
+ * Get Facebook/Instagram (Meta) Authorization URL, scoped to a channel
+ */
+export const getMetaAuthUrl = async (email: string, channelId: string) => {
+    try {
+        const response = await api.get('/meta/auth', { params: { email, channelId } });
+        return response.data?.url || response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.error || 'Erro ao obter URL de autorização do Meta');
+    }
+};
+
+/**
+ * Publish already-generated content (video/image/text) to one or more platforms
+ */
+export const publishContent = async (payload: any) => {
+    try {
+        const response = await api.post('/publisher/publish', payload);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.error || 'Erro ao publicar conteúdo');
+    }
+};
+
+/**
  * Get published videos history
  */
 export const getPublishedVideos = async (email: string, channelId?: string) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Youtube, Save, Loader2, ExternalLink, Music, History, Mic, Settings2, RefreshCw, Plus } from 'lucide-react';
-import { listChannels, updateChannel, refreshYoutubeToken, getYouTubeAuthUrl } from '../lib/api';
+import { Youtube, Save, Loader2, ExternalLink, Music, History, Mic, Settings2, RefreshCw, Plus, Facebook, Instagram, Link2 } from 'lucide-react';
+import { listChannels, updateChannel, refreshYoutubeToken, getYouTubeAuthUrl, getMetaAuthUrl } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Channel {
@@ -16,6 +16,10 @@ interface Channel {
     tiktokProfile?: string;
     refreshToken: string;
     ownerEmail?: string;
+    facebookConnected?: boolean;
+    facebookPageName?: string | null;
+    instagramConnected?: boolean;
+    instagramUsername?: string | null;
 }
 
 export function Channels() {
@@ -25,6 +29,7 @@ export function Channels() {
     const [isSaving, setIsSaving] = useState<string | null>(null);
     const [isRefreshing, setIsRefreshing] = useState<string | null>(null);
     const [isLinking, setIsLinking] = useState(false);
+    const [isConnectingMeta, setIsConnectingMeta] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -95,6 +100,26 @@ export function Channels() {
             }
         } finally {
             setIsRefreshing(null);
+        }
+    };
+
+    const handleConnectMeta = async (channelId: string) => {
+        if (!user?.email) return;
+        try {
+            setIsConnectingMeta(channelId);
+            setError(null);
+            setSuccessMessage(null);
+            const authUrl = await getMetaAuthUrl(user.email, channelId);
+            if (authUrl) {
+                window.open(authUrl, '_blank', 'width=600,height=700');
+                setSuccessMessage('Abra a janela de autorização do Meta para conectar Facebook/Instagram a este canal.');
+            } else {
+                setError('Não foi possível obter o link de autorização do Meta.');
+            }
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsConnectingMeta(null);
         }
     };
 
@@ -321,6 +346,42 @@ export function Channels() {
                                             className="w-full px-3 py-1.5 text-sm border border-border rounded-md bg-transparent" 
                                         />
                                     </div>
+                                </div>
+                            </div>
+
+                            <div className="px-6 pb-6 space-y-3">
+                                <h4 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wider">
+                                    <Link2 size={14} /> Conexões OAuth
+                                </h4>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <div className="flex items-center gap-2 px-3 py-2 border border-border rounded-md text-sm">
+                                        <Facebook size={16} className={channel.facebookConnected ? 'text-blue-500' : 'text-muted-foreground'} />
+                                        <span>
+                                            {channel.facebookConnected
+                                                ? `Facebook: ${channel.facebookPageName || 'Conectado'}`
+                                                : 'Facebook: não conectado'}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-2 border border-border rounded-md text-sm">
+                                        <Instagram size={16} className={channel.instagramConnected ? 'text-pink-500' : 'text-muted-foreground'} />
+                                        <span>
+                                            {channel.instagramConnected
+                                                ? `Instagram: @${channel.instagramUsername || 'conectado'}`
+                                                : 'Instagram: não conectado'}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleConnectMeta(channel.channelId)}
+                                        disabled={isConnectingMeta === channel.channelId}
+                                        className="flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-md hover:bg-primary/10 hover:text-primary disabled:opacity-50 transition-all"
+                                    >
+                                        {isConnectingMeta === channel.channelId ? (
+                                            <Loader2 className="animate-spin" size={14} />
+                                        ) : (
+                                            <Plus size={14} />
+                                        )}
+                                        {channel.facebookConnected || channel.instagramConnected ? 'Reconectar Facebook/Instagram' : 'Conectar Facebook/Instagram'}
+                                    </button>
                                 </div>
                             </div>
 

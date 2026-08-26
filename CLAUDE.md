@@ -63,13 +63,15 @@ src/routers/<domain>.router.ts
 - `/youtube/*` — OAuth2 channel auth, channel listing/update, video upload
 - `/video/*` — music-by-image, music-by-video, metadata generation, story generation
 - `/suno/*` — Suno music generation and management
-- `/orchestrator/generate_and_upload` — full end-to-end pipeline
+- `/orchestrator/generate_and_upload` — full end-to-end pipeline (accepts an optional `platforms: ('youtube'|'facebook'|'instagram')[]`, defaults to `['youtube']`)
 - `/uploads/local` and `/uploads/gdrive` — file intake
 - `/gemini-image/*` — Gemini image generation pipeline
+- `/meta/*` — Facebook Page / Instagram Business OAuth (mirrors `/youtube/auth` + `/youtube/oauth2callback`, scoped per `channelId`)
+- `/publisher/publish` — standalone multi-platform publish (video/image/text) for already-generated media or non-video posts
 
 **MongoDB models** (`src/models/`): `User`, `Channel`, `DailyPrompt`, `SunoMusic`, `Metadata`.
 
-`Channel` holds the YouTube OAuth `refreshToken` alongside channel metadata (genre, type, social profiles). Users embed channel references via an array.
+`Channel` holds the YouTube OAuth `refreshToken` alongside channel metadata (genre, type, social profiles) and an optional `meta` subdocument (`pageId`, `pageAccessToken`, `igUserId`, ...) with the connected Facebook Page / Instagram Business account. Users embed channel references via an array. See `src/services/social_publisher.service.ts` for the platform fan-out used by both the orchestrator and `/publisher/publish`.
 
 **FFmpeg helpers** live in `src/helpers/` (`runFFmpegCommand`, `runFfmpegConcat`, `getDuration`, etc.) and wrap `fluent-ffmpeg`.
 
@@ -102,6 +104,15 @@ DB_URI=mongodb://127.0.0.1:27017/yt-automatic-tools
 YT_CLIENT_ID=
 YT_CLIENT_SECRET=
 YT_REDIRECT_URI=http://localhost:4500/api/youtube/oauth2callback
+
+# Google Drive (reuses the YouTube OAuth client + drive.file scope) — public-hosts
+# generated videos/images so Facebook/Instagram Graph API can fetch them by URL
+GOOGLE_API_KEY=
+
+META_CLIENT_ID=
+META_CLIENT_SECRET=
+META_REDIRECT_URI=http://localhost:4500/api/meta/oauth2callback
+META_GRAPH_API_VERSION=v21.0
 
 GEM_API_KEY=
 GROQ_API_KEY=
@@ -145,7 +156,8 @@ VITE_GOOGLE_CLIENT_ID=   # Google OAuth client ID for Google SSO button
 | Pexels | `pexels` | Stock images/video |
 | Telegram | `telegram` (MTProto) | Fetch videos from Telegram channels |
 | FFmpeg | `fluent-ffmpeg` | Video/audio assembly — must be in system PATH |
-| Google Drive | `googleapis` | File upload/download |
+| Google Drive | `googleapis` | File upload/download; also public-hosts media for Meta Graph API upload-by-URL |
+| Meta Graph API | REST (custom service, native `fetch`) | Facebook Page + Instagram Business publishing (Reels, feed video/photo/text) |
 
 ---
 

@@ -3,9 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import { VideoMusicByFilesGeneratorService } from '../services/video_music_by_files_generator.service';
 import { VideoMusicPlaylistService } from '../services/video_music_playlist_generator.service';
-import { YtUploadVideoService } from '../services/yt_upload_video.service';
 import { PromptGeneratorService } from '../services/prompt_generator.service';
 import { GeminiImageGeneratorService } from '../services/gemini_image_generator.service';
+import { SocialPublisherService, PublishPlatform } from '../services/social_publisher.service';
 
 export class GenerateAndUploadVideosController {
     private playlist_service: VideoMusicPlaylistService;
@@ -40,7 +40,9 @@ export class GenerateAndUploadVideosController {
                 channelLang = 'en',
                 forceStyle,
                 niche,
-                musicGenre
+                musicGenre,
+                platforms,
+                isShortForm
             } = req.body;
 
             // 1. Basic Validation
@@ -172,28 +174,35 @@ export class GenerateAndUploadVideosController {
 
             console.log(`✅ Vídeo gerado em: ${generationResult.videoPath}`);
 
-            // 3. Automated Upload to YouTube
-            // Uses generationResult.videoPath and generationResult.timestampsPath (youtube_chapters.txt)
-            const uploadResult = await YtUploadVideoService.uploadWithAutoMetadata(
-                generationResult.videoPath,
-                generationResult.timestampsPath,
-                theme,
+            // 3. Publica nas plataformas selecionadas (default: apenas YouTube, comportamento pré-existente)
+            const targetPlatforms: PublishPlatform[] =
+                Array.isArray(platforms) && platforms.length ? platforms : ['youtube'];
+
+            const results = await SocialPublisherService.publish({
                 email,
                 channelId,
                 channelType,
-                refreshToken,
+                platforms: targetPlatforms,
+                contentType: 'video',
+                isShortForm,
+                mediaPath: generationResult.videoPath,
+                chaptersFilePath: generationResult.timestampsPath,
+                theme,
                 channelLang,
-                forceStyle,
                 niche,
-                musicGenre
-            );
+                musicGenre,
+                forceStyle,
+                refreshToken
+            });
 
             // 4. Return Final Result
+            const youtubeResult = results.find((r) => r.platform === 'youtube' && r.success);
             res.status(200).json({
                 message: '✅ Geração e Upload concluídos com sucesso!',
                 videoPath: generationResult.videoPath,
-                videoId: uploadResult.id,
-                link: `https://youtube.com/watch?v=${uploadResult.id}`,
+                videoId: youtubeResult?.postId,
+                link: youtubeResult?.url,
+                results,
                 generationDetails: generationResult
             });
 

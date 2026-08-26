@@ -7,7 +7,9 @@ import {
     auth, fileUpload,
     videoIndividualGenerator,
     geminiImage,
-    history
+    history,
+    metaAuthorize,
+    socialPublisher
 } from './routers';
 
 const router = Router()
@@ -26,5 +28,7 @@ router.use(fileUpload);
 router.use(videoIndividualGenerator);
 router.use(geminiImage);
 router.use(history);
+router.use(metaAuthorize);
+router.use(socialPublisher);
 
 export default router

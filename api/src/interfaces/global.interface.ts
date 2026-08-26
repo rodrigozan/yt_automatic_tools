@@ -1,5 +1,16 @@
 import { Document } from 'mongoose';
 
+export interface IMetaConnection {
+  pageId?: string;
+  pageName?: string;
+  pageAccessToken?: string;
+  metaUserId?: string;
+  igUserId?: string;
+  igUsername?: string;
+  connectedAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface IChannel {
   channelId: string;
   channelName: string;
@@ -12,6 +23,7 @@ export interface IChannel {
   youtubeChannel?: string;
   instagramProfile?: string;
   tiktokProfile?: string;
+  meta?: IMetaConnection;
   createdAt?: Date;
   updatedAt?: Date;
 }

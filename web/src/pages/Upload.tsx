@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload as UploadIcon, Link as LinkIcon, Loader2, Youtube, Music, Languages, Hash, Palette, Info } from 'lucide-react';
+import { Upload as UploadIcon, Link as LinkIcon, Loader2, Youtube, Music, Languages, Hash, Palette, Info, Facebook, Instagram, Zap, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
 import { uploadLocalFile, downloadGDriveFile, generateAndUploadVideo, listChannels } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Input, Select } from '../components/Form';
@@ -21,6 +21,9 @@ export function Upload() {
     const [channelLang, setChannelLang] = useState('pt');
     const [niche, setNiche] = useState('');
     const [musicGenre, setMusicGenre] = useState('');
+    const [platforms, setPlatforms] = useState<string[]>(['youtube']);
+    const [isShortForm, setIsShortForm] = useState(false);
+    const [publishResults, setPublishResults] = useState<any[] | null>(null);
 
     // File Upload State
     const [videoInputType, setVideoInputType] = useState<'file' | 'gdrive'>('file');
@@ -51,6 +54,8 @@ export function Upload() {
         }
     };
 
+    const selectedChannel = Array.isArray(channels) ? channels.find(c => c.channelId === channelId) : undefined;
+
     const handleChannelChange = (selectedId: string) => {
         setChannelId(selectedId);
         if (!Array.isArray(channels)) return;
@@ -61,16 +66,28 @@ export function Upload() {
             setChannelLang(channel.channelLang || 'pt');
             setNiche(channel.channelGenre || '');
             setMusicGenre(channel.channelGenre || '');
+            setIsShortForm(channel.channelType === 'podcast_clip');
+            setPlatforms(prev => prev.filter(p => p === 'youtube' ||
+                (p === 'facebook' && channel.facebookConnected) ||
+                (p === 'instagram' && channel.instagramConnected)));
         }
+    };
+
+    const togglePlatform = (platform: string) => {
+        setPlatforms(prev =>
+            prev.includes(platform) ? prev.filter(p => p !== platform) : [...prev, platform]
+        );
     };
 
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setMessage(null);
+        setPublishResults(null);
 
         try {
             if (!channelId) throw new Error('Por favor, selecione um canal.');
+            if (platforms.length === 0) throw new Error('Selecione ao menos uma plataforma de publicação.');
 
             // 1. Process Video
             let serverVideoPath = '';
@@ -120,10 +137,13 @@ export function Upload() {
                 channelLang,
                 niche,
                 musicGenre,
+                platforms,
+                isShortForm,
             };
 
             const response = await generateAndUploadVideo(payload);
 
+            setPublishResults(Array.isArray(response.results) ? response.results : null);
             setMessage({
                 type: 'success',
                 text: response.message || 'Geração e upload concluídos!',
@@ -217,6 +237,27 @@ export function Upload() {
                 </div>
             )}
 
+            {publishResults && (
+                <div className="p-4 rounded-2xl border border-white/[0.05] glass space-y-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Resultado por Plataforma</h4>
+                    {publishResults.map((r) => (
+                        <div key={r.platform} className="flex items-center gap-2 text-sm">
+                            {r.success ? (
+                                <CheckCircle2 size={16} className="text-green-500 shrink-0" />
+                            ) : r.skippedReason ? (
+                                <MinusCircle size={16} className="text-muted-foreground shrink-0" />
+                            ) : (
+                                <XCircle size={16} className="text-destructive shrink-0" />
+                            )}
+                            <span className="font-medium capitalize">{r.platform}:</span>
+                            <span className="text-muted-foreground">
+                                {r.success ? (r.url || 'Publicado com sucesso') : (r.skippedReason || r.error || 'Falhou')}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
             <form onSubmit={handleFormSubmit} className="space-y-8">
                 {/* 1. Seleção do Canal - O PRIMEIRO */}
                 <section className="p-8 glass rounded-3xl border border-white/[0.05] relative overflow-hidden">
@@ -251,6 +292,64 @@ export function Upload() {
                             disabled
                             placeholder="Email será preenchido automaticamente"
                         />
+                    </div>
+
+                    <div className="mt-6 pt-6 border-t border-white/[0.05] space-y-3">
+                        <p className="text-sm font-semibold">Plataformas de Publicação</p>
+                        <div className="flex flex-wrap gap-3">
+                            <button
+                                type="button"
+                                onClick={() => togglePlatform('youtube')}
+                                className={cn(
+                                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all",
+                                    platforms.includes('youtube')
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "border-white/10 text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <Youtube size={16} /> YouTube
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => selectedChannel?.facebookConnected && togglePlatform('facebook')}
+                                disabled={!selectedChannel?.facebookConnected}
+                                title={!selectedChannel?.facebookConnected ? 'Conecte este canal ao Facebook em Canais' : undefined}
+                                className={cn(
+                                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
+                                    platforms.includes('facebook')
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "border-white/10 text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <Facebook size={16} /> Facebook
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => selectedChannel?.instagramConnected && togglePlatform('instagram')}
+                                disabled={!selectedChannel?.instagramConnected}
+                                title={!selectedChannel?.instagramConnected ? 'Conecte este canal ao Instagram em Canais' : undefined}
+                                className={cn(
+                                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
+                                    platforms.includes('instagram')
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "border-white/10 text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <Instagram size={16} /> Instagram
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsShortForm(prev => !prev)}
+                                className={cn(
+                                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ml-auto",
+                                    isShortForm
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "border-white/10 text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <Zap size={16} /> É Short/Reel?
+                            </button>
+                        </div>
                     </div>
                 </section>
 

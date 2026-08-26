@@ -36,6 +36,7 @@ export class YtAuthorizeChannelsService {
     const scopes = [
       "https://www.googleapis.com/auth/youtube.upload",
       "https://www.googleapis.com/auth/youtube.readonly",
+      "https://www.googleapis.com/auth/drive.file",
     ];
 
     const client = this.loadOAuth2();

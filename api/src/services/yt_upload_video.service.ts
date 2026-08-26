@@ -12,6 +12,7 @@ import { MetadataService } from "./video_metadata_generator.service";
 /* --- Utils --- */
 import { getStatus } from "../utils/get_status.utils";
 import { detectChannelGenre } from "../utils/detect_channel_genre.utils";
+import { isShortFormContent } from "../utils/is_short_form_content.utils";
 
 config();
 
@@ -173,10 +174,7 @@ export class YtUploadVideoService {
     }
 
     // 🩳 Shorts detection
-    const isShort =
-      channelType === "podcast_clip" ||
-      channelType === "short" ||
-      title.toLowerCase().includes("#short");
+    const isShort = isShortFormContent({ channelType, title });
     if (isShort) {
       console.log(
         "🎞️ Detectado formato Shorts — aplicando regras especiais..."
