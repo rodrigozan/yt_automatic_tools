@@ -9,6 +9,8 @@ import { Channels } from './pages/Channels';
 import { History } from './pages/History';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
+import { TermsOfService } from './pages/TermsOfService';
+import { DataDeletion } from './pages/DataDeletion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -28,6 +30,10 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
             <Routes>
+              <Route path="/termos-de-servico" element={<TermsOfService />} />
+              <Route path="/termos" element={<TermsOfService />} />
+              <Route path="/exclusao-de-dados" element={<DataDeletion />} />
+              <Route path="/data-deletion" element={<DataDeletion />} />
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
 

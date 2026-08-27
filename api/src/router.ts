@@ -9,7 +9,8 @@ import {
     geminiImage,
     history,
     metaAuthorize,
-    socialPublisher
+    socialPublisher,
+    dataDeletion
 } from './routers';
 
 const router = Router()
@@ -30,5 +31,6 @@ router.use(geminiImage);
 router.use(history);
 router.use(metaAuthorize);
 router.use(socialPublisher);
+router.use(dataDeletion);
 
 export default router

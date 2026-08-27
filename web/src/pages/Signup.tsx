@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
 import { isValidEmail } from '../lib/validators';
+import { Footer } from '../components/Footer';
 
 export const Signup: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -29,8 +30,9 @@ export const Signup: React.FC = () => {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-2xl border border-border shadow-2xl">
+        <div className="min-h-screen flex flex-col bg-background">
+            <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+                <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-2xl border border-border shadow-2xl">
                 <div>
                     <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-foreground">
                         Create your account
@@ -87,7 +89,9 @@ export const Signup: React.FC = () => {
                         Sign in
                     </Link>
                 </p>
+                </div>
             </div>
+            <Footer />
         </div>
     );
 };
