@@ -16,3 +16,4 @@ export { default as history } from './history.router';
 export { default as metaAuthorize } from './meta_authorize_channel.router';
 export { default as socialPublisher } from './social_publisher.router';
 export { default as dataDeletion } from './data_deletion.router';
+export { default as narrativePipeline } from './narrative_pipeline.router';

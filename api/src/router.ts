@@ -10,7 +10,8 @@ import {
     history,
     metaAuthorize,
     socialPublisher,
-    dataDeletion
+    dataDeletion,
+    narrativePipeline
 } from './routers';
 
 const router = Router()
@@ -32,5 +33,6 @@ router.use(history);
 router.use(metaAuthorize);
 router.use(socialPublisher);
 router.use(dataDeletion);
+router.use(narrativePipeline);
 
 export default router

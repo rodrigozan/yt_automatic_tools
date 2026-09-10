@@ -17,6 +17,7 @@ Este repositório está organizado em dois componentes principais:
 - **Geração de Scripts e Histórias**: Geração de roteiros de alta qualidade e narrativas curtas usando modelos líderes de IA.
 - **Integração com a API Suno**: Crie trilhas sonoras dinâmicas e sob demanda integradas aos fluxos de conteúdo.
 - **Automação de Metadados**: Geração automática de títulos magnéticos, descrições ricas com links configuráveis (Spotify, etc.) e tags otimizadas por IA.
+- **Pipeline de Vídeos Narrativos Longos**: Geração fim a fim de dramas/romances de época (~50–90 min) via OpenRouter — story bible persistida, capítulos com verificação e regeneração automática de continuidade, prompts visuais, narração TTS e metadados de publicação.
 - **Processamento Contínuo**: Conversão e processamento de áudio/vídeo.
 - **Gerenciamento Unificado**: Administre múltiplos canais de YouTube de maneira centralizada.
 
@@ -62,6 +63,19 @@ GROQ_API_KEY=sua_chave_groq_aqui
 SUNO_API_KEY=sua_chave_da_suno
 SUNO_BASE_URL=https://api.sunoapi.org/api/v1/
 REPLICATE_API_KEY=sua_chave_opcional_da_replicate
+
+# 📖 Pipeline de Vídeos Narrativos Longos (OpenRouter — LLM + TTS)
+OPENROUTER_API_KEY=sua_chave_openrouter
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_MODEL_PLANNING=openai/gpt-4o-mini
+OPENROUTER_MODEL_WRITING=openai/gpt-4o-mini
+OPENROUTER_MODEL_CONTINUITY=openai/gpt-4o-mini
+OPENROUTER_MODEL_SUMMARY=openai/gpt-4o-mini
+OPENROUTER_MODEL_VISUAL=openai/gpt-4o-mini
+OPENROUTER_MODEL_METADATA=openai/gpt-4o-mini
+OPENROUTER_MODEL_TTS=openai/tts-1
+OPENROUTER_TTS_VOICE=alloy
+API_INTERNAL_BASE_URL=http://localhost:4500
 
 # 📞 Integrações (Telegram e Pexels)
 TG_API_ID=seu_id_telegram
@@ -134,6 +148,14 @@ Rotas destinadas à operação do próprio usuário criador na interface web:
 ### 🧠 Orquestração e Processamento Completo
 - `POST /orchestrator/generate_and_upload` - **O núcleo prático do sistema**: Inicia o fluxo unificado combinando a extração do tema, montagem da música, junção através do FFmpeg nos bastidores e, finalizando todo o processo, realizando o upload automático (direto e agendado) no YouTube.
 
+### 📖 Pipeline de Vídeos Narrativos Longos (Story Bible + Capítulos via OpenRouter)
+- `POST /narrative-pipeline/plan` - Calcula o número de capítulos e a faixa de palavras por capítulo a partir da duração-alvo do vídeo (ajustável antes de iniciar a geração).
+- `POST /narrative-pipeline/runs` - Cria e inicia em background um novo pipeline: gera a story bible, escreve os capítulos com verificação e regeneração automática de continuidade, resume, gera prompts visuais, narração (TTS) e metadados de publicação.
+- `GET /narrative-pipeline/runs` - Lista os pipelines já criados, paginado.
+- `GET /narrative-pipeline/runs/:id` - Consulta o status detalhado de um pipeline, incluindo story bible e capítulos.
+- `POST /narrative-pipeline/runs/:id/resume` - Retoma um pipeline interrompido a partir da última etapa concluída com sucesso, sem repetir trabalho já feito.
+- `POST /narrative-pipeline/runs/:id/assemble` - Etapa final: chama a API local de montagem de vídeo (FFmpeg) usando as narrações geradas e as imagens já produzidas a partir dos prompts visuais (geração de imagem em si é tratada por serviço à parte).
+
 ### 📤 Uploads Variados
 - `POST /uploads/local` - Realiza envio em disco de arquivos, mídia massiva ou Assets da dashboard para a API (`multipart/form-data`).
 - `POST /uploads/gdrive` - Espelha envios de media diretamente ao repositório ou pasta do Google Drive em nuvem.
@@ -146,7 +168,7 @@ Rotas destinadas à operação do próprio usuário criador na interface web:
 - **Back-end Base**: Node.js, Express.js
 - **Banco de dados**: MongoDB & Mongoose
 - **Processadores de Midia**: FFmpeg
-- **Machine Learning & Plataformas Auxiliares**: `google-auth-library`, `@google/generative-ai` (Gemini), `groq-sdk`, SDK da Suno, Fluent-FFmpeg.
+- **Machine Learning & Plataformas Auxiliares**: `google-auth-library`, `@google/generative-ai` (Gemini), `groq-sdk`, SDK da Suno, OpenRouter (LLM + TTS via `axios`), Fluent-FFmpeg.
 - **Front-end UI**: React 19, Vite, Tailwind CSS com componentes Shadcn/UI.
 
 ---

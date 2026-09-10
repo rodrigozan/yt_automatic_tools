@@ -68,8 +68,9 @@ src/routers/<domain>.router.ts
 - `/gemini-image/*` — Gemini image generation pipeline
 - `/meta/*` — Facebook Page / Instagram Business OAuth (mirrors `/youtube/auth` + `/youtube/oauth2callback`, scoped per `channelId`)
 - `/publisher/publish` — standalone multi-platform publish (video/image/text) for already-generated media or non-video posts
+- `/narrative-pipeline/*` — long-form narrative video pipeline (story bible → chapters → continuity check → visual prompts → TTS narration → metadata → video assembly), fully driven by OpenRouter; see `src/services/narrative_pipeline_orchestrator.service.ts`
 
-**MongoDB models** (`src/models/`): `User`, `Channel`, `DailyPrompt`, `SunoMusic`, `Metadata`.
+**MongoDB models** (`src/models/`): `User`, `Channel`, `DailyPrompt`, `SunoMusic`, `Metadata`, `StoryBible`, `Chapter`, `PipelineRun`.
 
 `Channel` holds the YouTube OAuth `refreshToken` alongside channel metadata (genre, type, social profiles) and an optional `meta` subdocument (`pageId`, `pageAccessToken`, `igUserId`, ...) with the connected Facebook Page / Instagram Business account. Users embed channel references via an array. See `src/services/social_publisher.service.ts` for the platform fan-out used by both the orchestrator and `/publisher/publish`.
 
@@ -120,6 +121,19 @@ GROQ_API_KEY=
 SUNO_API_KEY=
 SUNO_BASE_URL=https://api.sunoapi.org/api/v1/
 REPLICATE_API_KEY=
+
+# OpenRouter — camada única de LLM/TTS para o pipeline de vídeos narrativos longos
+OPENROUTER_API_KEY=
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_MODEL_PLANNING=openai/gpt-4o-mini
+OPENROUTER_MODEL_WRITING=openai/gpt-4o-mini
+OPENROUTER_MODEL_CONTINUITY=openai/gpt-4o-mini
+OPENROUTER_MODEL_SUMMARY=openai/gpt-4o-mini
+OPENROUTER_MODEL_VISUAL=openai/gpt-4o-mini
+OPENROUTER_MODEL_METADATA=openai/gpt-4o-mini
+OPENROUTER_MODEL_TTS=openai/tts-1
+OPENROUTER_TTS_VOICE=alloy
+API_INTERNAL_BASE_URL=http://localhost:4500   # usado pelo pipeline narrativo para chamar /api/orchestrator/generate_and_upload
 
 TG_API_ID=
 TG_API_HASH=
