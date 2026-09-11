@@ -3,6 +3,7 @@ import { Schema, model, Types } from 'mongoose';
 export type PipelineRunStatus =
     | 'planning'
     | 'writing'
+    | 'aguardando_revisao_manual'
     | 'visual_prompts'
     | 'narration'
     | 'metadata'
@@ -21,6 +22,7 @@ export interface IVisualPrompt {
     chapter_number: number;
     time_range: string;
     prompt: string;
+    image_path?: string;
 }
 
 export interface INarrationFile {
@@ -75,6 +77,7 @@ const VisualPromptSchema = new Schema<IVisualPrompt>({
     chapter_number: { type: Number, required: true },
     time_range: { type: String, required: true },
     prompt: { type: String, required: true },
+    image_path: { type: String },
 }, { _id: false });
 
 const NarrationFileSchema = new Schema<INarrationFile>({
@@ -106,10 +109,10 @@ const PipelineRunSchema = new Schema<IPipelineRun>({
         min: { type: Number, required: true },
         max: { type: Number, required: true },
     },
-    max_regeneration_attempts: { type: Number, default: 2 },
+    max_regeneration_attempts: { type: Number, default: 5 },
     status: {
         type: String,
-        enum: ['planning', 'writing', 'visual_prompts', 'narration', 'metadata', 'video_assembly', 'completed', 'failed'],
+        enum: ['planning', 'writing', 'aguardando_revisao_manual', 'visual_prompts', 'narration', 'metadata', 'video_assembly', 'completed', 'failed'],
         default: 'planning',
     },
     current_step: { type: String, default: 'aguardando_inicio' },

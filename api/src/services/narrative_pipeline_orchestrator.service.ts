@@ -36,18 +36,31 @@ export class NarrativePipelineOrchestratorService {
                 await this.processChapter(run, storyBible, chapterNumber);
             }
 
+            const approvedChaptersCount = await ChapterModel.countDocuments({
+                pipeline_run_id: run._id,
+                status: 'approved',
+            });
+
+            if (approvedChaptersCount < run.chapters_planned) {
+                const rejectedCount = run.chapters_planned - approvedChaptersCount;
+                run.status = 'aguardando_revisao_manual';
+                run.current_step = `aguardando_revisao_manual_de_${rejectedCount}_capitulo(s)`;
+                await run.save();
+                return;
+            }
+
             run.status = 'visual_prompts';
             run.current_step = 'gerando_prompts_visuais';
             await run.save();
 
-            if (!run.visual_prompts?.length) {
-                const { visualPrompts, promptTokens, completionTokens } =
-                    await this.visualPromptGenerator.generateForRun(run._id!, storyBible);
+            const { visualPrompts, promptTokens, completionTokens } =
+                await this.visualPromptGenerator.generateForRun(run._id!, storyBible, run.visual_prompts);
 
-                run.visual_prompts = visualPrompts;
+            run.visual_prompts = visualPrompts;
+            if (promptTokens || completionTokens) {
                 this.logCost(run, 'prompts_visuais', this.visualPromptGenerator.model, promptTokens, completionTokens);
-                await run.save();
             }
+            await run.save();
 
             run.status = 'narration';
             run.current_step = 'gerando_narracao';
@@ -126,7 +139,7 @@ export class NarrativePipelineOrchestratorService {
         const outlineItem = storyBible.outline.find((o) => o.chapter_number === chapterNumber);
         if (!outlineItem) throw new Error(`Outline não encontrado para o capítulo ${chapterNumber}`);
 
-        const maxAttempts = run.max_regeneration_attempts ?? 2;
+        const maxAttempts = run.max_regeneration_attempts ?? 5;
         let attempt = chapter?.continuity_checks?.length ?? 0;
         let correctionNotes: string[] = [];
 
@@ -158,6 +171,7 @@ export class NarrativePipelineOrchestratorService {
                 priorSummaries,
                 chapterNumber,
                 chapterText: chapter.text,
+                outlineSummary: outlineItem.summary_planned,
             });
 
             this.logCost(run, `continuidade_capitulo_${chapterNumber}`, this.continuityChecker.model, checkResult.promptTokens, checkResult.completionTokens);

@@ -131,9 +131,9 @@ router.post('/narrative-pipeline/runs/:id/resume', controller.resume);
 
 /**
  * @swagger
- * /narrative-pipeline/runs/{id}/assemble:
+ * /narrative-pipeline/runs/{id}/retry-rejected-chapters:
  *   post:
- *     summary: Chama a API local de montagem de vídeo (FFmpeg) usando as narrações geradas e as imagens já produzidas a partir dos prompts visuais
+ *     summary: Apaga os capítulos em revisao_manual_necessaria e reprocessa apenas eles (reaproveita story bible, capítulos aprovados, narrações e imagens já geradas)
  *     tags: [NarrativePipeline]
  *     parameters:
  *       - in: path
@@ -141,33 +141,28 @@ router.post('/narrative-pipeline/runs/:id/resume', controller.resume);
  *         required: true
  *         schema:
  *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [generationSource, outputName, theme, email, channelId, channelType]
- *             properties:
- *               imageDir:
- *                 type: string
- *               videoDir:
- *                 type: string
- *               generationSource:
- *                 type: string
- *                 enum: [video, image, auto_image]
- *               outputName:
- *                 type: string
- *               theme:
- *                 type: string
- *               email:
- *                 type: string
- *               channelId:
- *                 type: string
- *               channelType:
- *                 type: string
- *               channelLang:
- *                 type: string
+ *     responses:
+ *       202:
+ *         description: Capítulos rejeitados sendo reprocessados em background
+ *       200:
+ *         description: Não havia capítulos em revisão manual
+ *       404:
+ *         description: Não encontrado
+ */
+router.post('/narrative-pipeline/runs/:id/retry-rejected-chapters', controller.retryRejectedChapters);
+
+/**
+ * @swagger
+ * /narrative-pipeline/runs/{id}/assemble:
+ *   post:
+ *     summary: Gera uma imagem real (Gemini) para cada prompt visual do run, monta um vídeo por capítulo (slideshow sincronizado com a narração) e concatena tudo no vídeo final
+ *     tags: [NarrativePipeline]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Vídeo final montado com sucesso

@@ -7,7 +7,7 @@ import { extractJson } from '../utils/extract_json.utils';
 import { formatTime } from '../helpers/formatTime.helper';
 
 const WORDS_PER_SECOND = 140 / 60;
-const SECONDS_PER_PROMPT_AVG = 6;
+const SECONDS_PER_PROMPT_AVG = 150;
 
 export class VisualPromptGeneratorService {
     private openRouter: OpenRouterService;
@@ -18,16 +18,23 @@ export class VisualPromptGeneratorService {
         this.model = process.env.OPENROUTER_MODEL_VISUAL || 'openai/gpt-4o-mini';
     }
 
-    public async generateForRun(pipelineRunId: Types.ObjectId, storyBible: IStoryBible): Promise<{
+    public async generateForRun(
+        pipelineRunId: Types.ObjectId,
+        storyBible: IStoryBible,
+        existingPrompts: IVisualPrompt[] = []
+    ): Promise<{
         visualPrompts: IVisualPrompt[];
         promptTokens: number;
         completionTokens: number;
     }> {
-        const chapters = await ChapterModel.find({ pipeline_run_id: pipelineRunId, status: 'approved' })
-            .sort({ chapter_number: 1 });
+        const coveredChapters = new Set(existingPrompts.map((p) => p.chapter_number));
+
+        const chapters = (await ChapterModel.find({ pipeline_run_id: pipelineRunId, status: 'approved' })
+            .sort({ chapter_number: 1 }))
+            .filter((chapter) => !coveredChapters.has(chapter.chapter_number));
 
         let elapsedSeconds = 0;
-        const visualPrompts: IVisualPrompt[] = [];
+        const visualPrompts: IVisualPrompt[] = [...existingPrompts];
         let totalPromptTokens = 0;
         let totalCompletionTokens = 0;
 

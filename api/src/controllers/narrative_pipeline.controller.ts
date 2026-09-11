@@ -1,21 +1,23 @@
 import { Request, Response } from 'express';
-import path from 'path';
 import { PipelineRunModel } from '../models/pipeline_run.model';
 import { StoryBibleModel } from '../models/story_bible.model';
 import { ChapterModel } from '../models/chapter.model';
 import { StoryBibleGeneratorService } from '../services/story_bible_generator.service';
 import { NarrativePipelineOrchestratorService } from '../services/narrative_pipeline_orchestrator.service';
-import { VideoAssemblyClientService } from '../services/video_assembly_client.service';
+import { NarrativeImageGeneratorService } from '../services/narrative_image_generator.service';
+import { NarrativeVideoAssemblerService } from '../services/narrative_video_assembler.service';
 
 export class NarrativePipelineController {
     private storyBibleGenerator: StoryBibleGeneratorService;
     private orchestrator: NarrativePipelineOrchestratorService;
-    private videoAssemblyClient: VideoAssemblyClientService;
+    private narrativeImageGenerator: NarrativeImageGeneratorService;
+    private narrativeVideoAssembler: NarrativeVideoAssemblerService;
 
     constructor() {
         this.storyBibleGenerator = new StoryBibleGeneratorService();
         this.orchestrator = new NarrativePipelineOrchestratorService();
-        this.videoAssemblyClient = new VideoAssemblyClientService();
+        this.narrativeImageGenerator = new NarrativeImageGeneratorService();
+        this.narrativeVideoAssembler = new NarrativeVideoAssemblerService();
     }
 
     public plan = (req: Request, res: Response): void => {
@@ -46,7 +48,7 @@ export class NarrativePipelineController {
                 target_duration_minutes: targetDurationMinutes,
                 chapters_planned: chaptersPlanned ?? defaultPlan.chaptersPlanned,
                 words_per_chapter_target: wordsPerChapterTarget ?? defaultPlan.wordsPerChapterTarget,
-                max_regeneration_attempts: maxRegenerationAttempts ?? 2,
+                max_regeneration_attempts: maxRegenerationAttempts ?? 5,
                 status: 'planning',
                 current_step: 'aguardando_inicio',
             });
@@ -58,6 +60,43 @@ export class NarrativePipelineController {
             res.status(202).json({ message: 'Pipeline iniciado', data: run });
         } catch (err: any) {
             console.error('[NarrativePipelineController] create error:', err.message);
+            res.status(500).json({ error: err.message });
+        }
+    };
+
+    public retryRejectedChapters = async (req: Request, res: Response): Promise<void> => {
+        const { id } = req.params;
+
+        try {
+            const run = await PipelineRunModel.findById(id);
+
+            if (!run) {
+                res.status(404).json({ error: 'Pipeline run não encontrado' });
+                return;
+            }
+
+            const { deletedCount } = await ChapterModel.deleteMany({
+                pipeline_run_id: run._id,
+                status: 'revisao_manual_necessaria',
+            });
+
+            if (!deletedCount) {
+                res.status(200).json({ message: 'Nenhum capítulo em revisão manual para reprocessar', data: run });
+                return;
+            }
+
+            run.status = 'writing';
+            run.error_message = undefined;
+            run.final_video_path = null;
+            await run.save();
+
+            this.orchestrator.run(run._id!).catch((err: any) =>
+                console.error(`[NarrativePipeline] Falha ao reprocessar capítulos rejeitados ${run._id}:`, err.message)
+            );
+
+            res.status(202).json({ message: `${deletedCount} capítulo(s) rejeitado(s) sendo reprocessado(s)`, data: run });
+        } catch (err: any) {
+            console.error('[NarrativePipelineController] retryRejectedChapters error:', err.message);
             res.status(500).json({ error: err.message });
         }
     };
@@ -95,14 +134,6 @@ export class NarrativePipelineController {
 
     public assemble = async (req: Request, res: Response): Promise<void> => {
         const { id } = req.params;
-        const { imageDir, videoDir, generationSource, outputName, theme, email, channelId, channelType, channelLang } = req.body;
-
-        if (!generationSource || !outputName || !theme || !email || !channelId || !channelType) {
-            res.status(400).json({
-                error: 'generationSource, outputName, theme, email, channelId e channelType são obrigatórios',
-            });
-            return;
-        }
 
         try {
             const run = await PipelineRunModel.findById(id);
@@ -117,27 +148,26 @@ export class NarrativePipelineController {
                 return;
             }
 
-            const audioDir = path.dirname(run.narration_files[0].path);
+            if (!run.visual_prompts.length) {
+                res.status(400).json({ error: 'Pipeline ainda não gerou os prompts visuais' });
+                return;
+            }
 
-            const assemblyResult = await this.videoAssemblyClient.assemble({
-                audioDir,
-                imageDir,
-                videoDir,
-                generationSource,
-                outputName,
-                theme,
-                email,
-                channelId,
-                channelType,
-                channelLang,
-            });
+            run.visual_prompts = await this.narrativeImageGenerator.generateForRun(run._id!, run.visual_prompts);
+            await run.save();
 
-            run.final_video_path = assemblyResult?.videoPath ?? assemblyResult?.generationDetails?.videoPath ?? null;
+            const finalVideoPath = await this.narrativeVideoAssembler.assemble(
+                String(run._id),
+                run.narration_files,
+                run.visual_prompts
+            );
+
+            run.final_video_path = finalVideoPath;
             run.status = 'completed';
             run.current_step = 'concluido';
             await run.save();
 
-            res.status(200).json({ message: 'Vídeo montado com sucesso', data: run, assemblyResult });
+            res.status(200).json({ message: 'Vídeo montado com sucesso', data: run });
         } catch (err: any) {
             console.error('[NarrativePipelineController] assemble error:', err.message);
             res.status(500).json({ error: err.message });
@@ -158,7 +188,7 @@ export class NarrativePipelineController {
             const storyBible = await StoryBibleModel.findOne({ pipeline_run_id: run._id });
             const chapters = await ChapterModel.find({ pipeline_run_id: run._id })
                 .sort({ chapter_number: 1 })
-                .select('chapter_number word_count status summary');
+                .select('chapter_number word_count status summary continuity_checks');
 
             res.status(200).json({ data: { run, storyBible, chapters } });
         } catch (err: any) {

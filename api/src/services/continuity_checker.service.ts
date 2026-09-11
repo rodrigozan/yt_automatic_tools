@@ -9,6 +9,7 @@ export interface ICheckContinuityParams {
     priorSummaries: IPriorSummary[];
     chapterNumber: number;
     chapterText: string;
+    outlineSummary: string;
 }
 
 export class ContinuityCheckerService {
@@ -26,12 +27,14 @@ export class ContinuityCheckerService {
         completionTokens: number;
     }> {
         const systemPrompt = `Você é um editor de continuidade narrativa especializado em dramas de época e romance.
-Compare o novo capítulo com a story bible e o resumo acumulado da história, verificando pelo menos:
+Compare o novo capítulo com a story bible, o resumo acumulado da história e o outline planejado para ESTE capítulo específico, verificando pelo menos:
 - Idade e aparência dos personagens.
 - Ordem dos eventos.
 - Ritmo do romance/conflito.
-- Não revelação prematura de segredos definidos na story bible.
 - Repetição de frases ou estruturas do capítulo anterior.
+- Revelação de segredos da story bible que NÃO estejam previstos no outline planejado deste capítulo.
+
+IMPORTANTE: o outline planejado deste capítulo já define o que DEVE acontecer nele — incluindo pistas ou revelações parciais de segredos, se o outline mencionar isso. NÃO marque como "revelação prematura" algo que o próprio outline deste capítulo pede para acontecer. Só marque revelação de segredo como problema se ela for além do que o outline planejado autoriza (ex: revelar o segredo por completo quando o outline só pedia uma pista sutil).
 
 Responda APENAS com um objeto JSON válido no formato:
 { "issues": [{ "description": string, "severity": "bloqueante" | "alerta" }] }
@@ -46,6 +49,9 @@ ${JSON.stringify(params.storyBible)}
 
 Resumo acumulado dos capítulos anteriores:
 ${summariesText}
+
+Outline planejado para o capítulo ${params.chapterNumber} (o que este capítulo DEVE cobrir):
+${params.outlineSummary}
 
 Novo capítulo (número ${params.chapterNumber}) a ser verificado:
 ${params.chapterText}`;

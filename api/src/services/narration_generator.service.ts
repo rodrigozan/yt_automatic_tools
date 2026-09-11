@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import ffmpeg from 'fluent-ffmpeg';
 import { Types } from 'mongoose';
 import { OpenRouterService } from './openrouter.service';
+import { runFFmpegCommand } from '../helpers/runFFmpegCommand.helper';
 import { ChapterModel } from '../models/chapter.model';
 import { INarrationFile } from '../models/pipeline_run.model';
 
@@ -12,7 +14,7 @@ export class NarrationGeneratorService {
 
     constructor() {
         this.openRouter = new OpenRouterService();
-        this.model = process.env.OPENROUTER_MODEL_TTS || 'openai/tts-1';
+        this.model = process.env.OPENROUTER_MODEL_TTS || 'openai/gpt-audio';
         this.voice = process.env.OPENROUTER_TTS_VOICE || 'alloy';
     }
 
@@ -40,7 +42,10 @@ export class NarrationGeneratorService {
                 input: chapter.text,
             });
 
-            fs.writeFileSync(filePath, speech.audio);
+            const tempWavPath = path.join(dir, `${pipelineRunId}_cap${chapter.chapter_number}.wav`);
+            fs.writeFileSync(tempWavPath, speech.audio);
+            await runFFmpegCommand(ffmpeg(tempWavPath).audioCodec('libmp3lame').output(filePath));
+            fs.unlinkSync(tempWavPath);
 
             const withoutChapter = files.filter((f) => f.chapter_number !== chapter.chapter_number);
             files.length = 0;
