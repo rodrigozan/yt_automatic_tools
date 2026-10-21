@@ -2,6 +2,8 @@ import fs from "fs";
 import { google } from "googleapis";
 import { config } from "dotenv";
 import { PublishedVideoModel } from "../models/published_video.model";
+import { PublishLogModel } from "../models/publish_log.model";
+import { parsePublishOptions, PublishOptions } from "../utils/publish_options.utils";
 
 /* --- Models --- */
 import { User } from "../models/user.model";
@@ -110,7 +112,8 @@ export class YtUploadVideoService {
     publishAt?: Date | string,
     email?: string,
     channelId?: string,
-    channelType?: string
+    channelType?: string,
+    publishOptions?: PublishOptions
   ) {
     if (!fs.existsSync(videoPath))
       throw new Error(`Arquivo de vídeo não encontrado: ${videoPath}`);
@@ -183,7 +186,16 @@ export class YtUploadVideoService {
       description += "\n\n#Shorts";
     }
 
-    const status = getStatus(isShort, publishAt);
+    // Com publishOptions (endpoint /youtube/upload) o status é o escolhido pelo chamador;
+    // sem ele, mantém o comportamento legado (Shorts públicos, longos agendados às 20h).
+    const status = publishOptions
+      ? {
+          madeForKids: false,
+          selfDeclaredMadeForKids: false,
+          privacyStatus: publishOptions.privacyStatus,
+          ...(publishOptions.publishAt ? { publishAt: publishOptions.publishAt } : {}),
+        }
+      : getStatus(isShort, publishAt);
 
     try {
       const response = await youtube.videos.insert(
@@ -248,5 +260,67 @@ export class YtUploadVideoService {
       console.error("❌ Erro no upload:", err.response?.data || err.message);
       throw err;
     }
+  }
+
+  /**
+   * Entrada do endpoint POST /youtube/upload: valida status/publishAt, publica e registra
+   * a tentativa (sucesso ou erro) em PublishLog. Nada vai ao YouTube se a validação falhar.
+   */
+  static async publish(input: {
+    videoPath: string;
+    title: string;
+    description: string;
+    tags?: string[];
+    status: unknown;
+    publishAt?: unknown;
+    channelId?: string;
+    channelType?: string;
+    channelLang?: string;
+    refreshToken?: string;
+    agentId?: string;
+  }) {
+    const log = {
+      agentId: input.agentId,
+      channelId: input.channelId,
+      videoPath: input.videoPath,
+      title: input.title,
+      status: typeof input.status === "string" ? input.status : String(input.status),
+      publishAt: undefined as Date | undefined,
+    };
+
+    try {
+      const options = parsePublishOptions(input.status, input.publishAt);
+      if (options.publishAt) log.publishAt = new Date(options.publishAt);
+
+      const data = await this.uploadToYouTube(
+        input.videoPath,
+        input.title,
+        input.description,
+        input.tags || [],
+        input.refreshToken,
+        input.channelLang,
+        undefined,
+        undefined,
+        input.channelId,
+        input.channelType,
+        options
+      );
+
+      const youtubeUrl = `https://youtube.com/watch?v=${data.id}`;
+      await PublishLogModel.create({ ...log, result: "success", videoId: data.id, youtubeUrl });
+      return { videoId: data.id as string, youtubeUrl, status: options.privacyStatus, publishAt: options.publishAt };
+    } catch (err: any) {
+      await PublishLogModel.create({ ...log, result: "error", error: err.message }).catch((logErr) =>
+        console.error("❌ Falha ao gravar PublishLog:", logErr.message)
+      );
+      throw err;
+    }
+  }
+
+  static listPublications(filter: { channelId?: string; result?: string }, limit = 50) {
+    const query: Record<string, string> = {};
+    if (filter.channelId) query.channelId = filter.channelId;
+    if (filter.result) query.result = filter.result;
+    return PublishLogModel.find(query).sort({ createdAt: -1 }).limit(Math.min(limit, 200)).lean();
   }
 }

@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
-    allowedHosts: ['ytautomatictools.duckdns.org'],
+    allowedHosts: ['ytautomatictools.duckdns.org', '.ts.net'],
     proxy: {
       '/api': {
         target: 'http://localhost:4500',

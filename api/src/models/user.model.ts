@@ -10,6 +10,9 @@ const UserSchema = new mongoose.Schema({
   picture: { type: String },
   role: { type: String, enum: ["user", "admin"], default: "user" },
   channels: [ChannelSchema],
+  // Refresh token com escopo drive.file da conta Google pessoal, usado para
+  // hospedar mídia publicamente para a Graph API do Meta.
+  driveRefreshToken: { type: String },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

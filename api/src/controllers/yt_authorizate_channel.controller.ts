@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { google } from "googleapis";
-import { YtAuthorizeChannelsService } from "../services/yt_authorizate_channel.service";
+import { YtAuthorizeChannelsService, DRIVE_STATE_PREFIX } from "../services/yt_authorizate_channel.service";
 import { UserService } from "../services/user.service";
 
 export class YtAuthorizeChannelsController {
@@ -24,17 +24,25 @@ export class YtAuthorizeChannelsController {
 
   static async callback(req: Request, res: Response) {
     const code = req.query.code as string;
-    const email = req.query.state
+    const state = req.query.state
       ? decodeURIComponent(req.query.state as string)
       : undefined;
+    const isDriveFlow = !!state?.startsWith(DRIVE_STATE_PREFIX);
+    const email = isDriveFlow ? state!.slice(DRIVE_STATE_PREFIX.length) : state;
 
     if (!code || !email) {
       return res.status(400).send("Código ou e-mail ausente.");
     }
 
-    console.log("Code: ", code, "; Email: ", email);
-
     try {
+      if (isDriveFlow) {
+        await YtAuthorizeChannelsService.handleDriveOAuthCallback(code, email);
+        return res.send(`
+          <h2>✅ Conta Google vinculada com sucesso!</h2>
+          <p>Google Drive conectado. Você já pode fechar esta janela.</p>
+        `);
+      }
+
       const channelData = await YtAuthorizeChannelsService.handleOAuthCallback(
         code,
         email
@@ -42,10 +50,15 @@ export class YtAuthorizeChannelsController {
 
       console.log("Channel Data", channelData);
 
+      // Primeira vinculação: emenda o consentimento do Drive (conta pessoal)
+      // logo após o do canal, para não exigir um passo manual.
+      if (channelData.needsDriveLink) {
+        return res.redirect(YtAuthorizeChannelsService.getDriveAuthUrl(email));
+      }
+
       return res.send(`
         <h2>✅ Canal "${channelData.channelName}" conectado com sucesso!</h2>
-        <p>Refresh token salvo no banco.</p>
-        <pre>${JSON.stringify(channelData, null, 2)}</pre>
+        <p>Você já pode fechar esta janela.</p>
       `);
     } catch (err: any) {
       console.error("❌ Erro no callback:", err.message);

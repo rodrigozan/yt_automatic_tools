@@ -13,6 +13,8 @@ import { UserService } from "../services/user.service";
 
 config();
 
+export const DRIVE_STATE_PREFIX = "drive:";
+
 export class YtAuthorizeChannelsService {
   private oauth2Client;
 
@@ -32,11 +34,13 @@ export class YtAuthorizeChannelsService {
     );
   }
 
+  // Somente escopos do YouTube: o Google rejeita (invalid_request) misturar
+  // youtube.* com drive.* quando o canal escolhido é uma Brand Account, e é
+  // isso que permite selecionar qualquer canal que a conta Google gerencia.
   static getAuthUrl(email?: string): string {
     const scopes = [
       "https://www.googleapis.com/auth/youtube.upload",
       "https://www.googleapis.com/auth/youtube.readonly",
-      "https://www.googleapis.com/auth/drive.file",
     ];
 
     const client = this.loadOAuth2();
@@ -48,6 +52,39 @@ export class YtAuthorizeChannelsService {
       state: email || undefined,
       redirect_uri: process.env.YT_REDIRECT_URI!,
     });
+  }
+
+  // Fluxo separado para o Drive, vinculado à conta Google pessoal (não à Brand
+  // Account do canal). Reaproveita o mesmo redirect URI; o prefixo do `state`
+  // diferencia os callbacks.
+  static getDriveAuthUrl(email: string): string {
+    const client = this.loadOAuth2();
+
+    return client.generateAuthUrl({
+      access_type: "offline",
+      prompt: "consent",
+      scope: ["https://www.googleapis.com/auth/drive.file"],
+      state: `${DRIVE_STATE_PREFIX}${email}`,
+      redirect_uri: process.env.YT_REDIRECT_URI!,
+    });
+  }
+
+  static async handleDriveOAuthCallback(code: string, email: string) {
+    const tokens = await YtAuthorizeChannelsService.exchangeCodeForTokens(code);
+
+    if (!tokens.refresh_token) {
+      throw new Error(
+        "❌ Nenhum refresh_token retornado para o Google Drive. Revogue o app e tente novamente."
+      );
+    }
+
+    const userService = new UserService();
+    const user = await userService.findOrCreate(email);
+    user.driveRefreshToken = tokens.refresh_token;
+    user.updatedAt = new Date();
+    await user.save();
+
+    console.log("✅ Google Drive vinculado com sucesso!");
   }
 
   static async exchangeCodeForTokens(code: string) {
@@ -155,6 +192,6 @@ export class YtAuthorizeChannelsService {
     await user.save();
 
     console.log("✅ Canal conectado/atualizado com sucesso!");
-    return { channelId, channelName, refreshToken };
+    return { channelId, channelName, needsDriveLink: !user.driveRefreshToken };
   }
 }

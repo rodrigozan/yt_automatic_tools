@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { SocialPublisherController } from "../controllers/social_publisher.controller";
+import { requireGladiadorYoutube } from "../middleware/gladiador_yt_auth.middleware";
 
 const router = Router();
 
@@ -44,6 +45,6 @@ const router = Router();
  *       500:
  *         description: Erro ao publicar
  */
-router.post("/publisher/publish", SocialPublisherController.publish);
+router.post("/publisher/publish", requireGladiadorYoutube, SocialPublisherController.publish);
 
 export default router;

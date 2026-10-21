@@ -23,6 +23,7 @@ tsconfig.tsbuildinfo
 .vscode/
 .idea/
 *.swp
+client_secret.apps.googleusercontent.com.json
 
 # ========================================
 # 📦 DATABASE / TMP FILES

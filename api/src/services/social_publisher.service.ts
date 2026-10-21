@@ -23,7 +23,6 @@ export interface PublishInput {
   niche?: string;
   musicGenre?: string;
   forceStyle?: "christian" | "secular";
-  refreshToken?: string;
 }
 
 export interface PublishResult {
@@ -55,7 +54,9 @@ export class SocialPublisherService {
     const wantsFacebook = platforms.includes("facebook");
     const wantsInstagram = platforms.includes("instagram");
 
-    const driveRefreshToken: string | undefined = channel?.refreshToken;
+    // Canais vinculados antes da separação dos fluxos OAuth têm drive.file no
+    // próprio refreshToken do canal; os novos usam o token da conta do usuário.
+    const driveRefreshToken: string | undefined = user?.driveRefreshToken || channel?.refreshToken;
     let driveUpload: DrivePublicUpload | null = null;
 
     const ensurePublicUrl = async (): Promise<string> => {
@@ -78,7 +79,7 @@ export class SocialPublisherService {
           email,
           channelId,
           input.channelType || "default",
-          input.refreshToken,
+          undefined,
           input.channelLang,
           input.forceStyle,
           input.niche,

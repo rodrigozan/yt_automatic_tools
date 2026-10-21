@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 
 import { YtUploadVideoService } from "../services/yt_upload_video.service";
+import { PublishValidationError } from "../utils/publish_options.utils";
 
 export class YtUploadVideoController {
   public async upload(req: Request, res: Response) {
@@ -10,39 +11,58 @@ export class YtUploadVideoController {
         title,
         description,
         tags,
-        chaptersFilePath,
-        refreshToken,
         channelLang,
+        channelId,
+        channelType,
+        status,
         publishAt,
       } = req.body;
 
-      // 🔍 Validação simples — controller só valida o essencial
       if (!videoDir || !title || !description) {
         return res.status(400).json({
           error: "Campos obrigatórios ausentes: videoDir, title e description",
         });
       }
 
-      // 🚀 Chama o serviço que faz TODO o trabalho pesado
-      const result = await YtUploadVideoService.uploadWithAutoMetadata(
-        videoDir,
+      const result = await YtUploadVideoService.publish({
+        videoPath: videoDir,
         title,
         description,
-        tags || [],
-        chaptersFilePath,
-        refreshToken,
+        tags: Array.isArray(tags) ? tags : [],
+        status,
+        publishAt,
+        channelId,
+        channelType,
         channelLang,
-        publishAt
-      );
+        agentId: req.gladiadorYt?.agentId,
+      });
 
-      // 🎯 Controller apenas retorna o resultado
       return res.status(200).json({
-        message: "✅ Upload concluído com sucesso!",
-        videoId: result.id,
-        link: `https://youtube.com/watch?v=${result.id}`,
+        message: "Upload concluído com sucesso!",
+        videoId: result.videoId,
+        link: result.youtubeUrl,
+        status: result.status,
+        publishAt: result.publishAt ?? null,
       });
     } catch (err: any) {
-      console.error("❌ Erro no upload:", err.message);
+      const httpStatus = err instanceof PublishValidationError ? err.httpStatus : 500;
+      if (httpStatus === 500) console.error("❌ Erro no upload:", err.message);
+      return res.status(httpStatus).json({ error: err.message });
+    }
+  }
+
+  public async listPublications(req: Request, res: Response) {
+    try {
+      const { channelId, result, limit } = req.query;
+      const items = await YtUploadVideoService.listPublications(
+        {
+          channelId: typeof channelId === "string" ? channelId : undefined,
+          result: result === "success" || result === "error" ? result : undefined,
+        },
+        Number(limit) > 0 ? Number(limit) : 50
+      );
+      return res.status(200).json({ items });
+    } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
   }

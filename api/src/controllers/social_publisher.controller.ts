@@ -19,7 +19,6 @@ export class SocialPublisherController {
         niche,
         musicGenre,
         forceStyle,
-        refreshToken,
       } = req.body;
 
       if (!email || !channelId || !Array.isArray(platforms) || platforms.length === 0 || !contentType) {
@@ -44,7 +43,6 @@ export class SocialPublisherController {
         niche,
         musicGenre,
         forceStyle,
-        refreshToken,
       };
 
       const results = await SocialPublisherService.publish(input);

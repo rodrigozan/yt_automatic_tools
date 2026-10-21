@@ -106,7 +106,8 @@ YT_CLIENT_ID=
 YT_CLIENT_SECRET=
 YT_REDIRECT_URI=http://localhost:4500/api/youtube/oauth2callback
 
-# Google Drive (reuses the YouTube OAuth client + drive.file scope) — public-hosts
+# Google Drive (reuses the YouTube OAuth client, but a separate drive.file consent stored
+# in User.driveRefreshToken — Google forbids mixing youtube.* + drive.* scopes) — public-hosts
 # generated videos/images so Facebook/Instagram Graph API can fetch them by URL
 GOOGLE_API_KEY=
 
