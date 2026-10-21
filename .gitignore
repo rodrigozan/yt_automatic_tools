@@ -3,6 +3,7 @@ dist/
 build/
 .env
 .env.local
+.env.bak*
 package-lock.json
 yarn.lock
 phanterai_vps_key
