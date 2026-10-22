@@ -48,7 +48,7 @@ export class YtAuthorizeChannelsService {
 
     return client.generateAuthUrl({
       access_type: "offline",
-      prompt: "consent",
+      prompt: "select_account consent",
       scope: scopes,
       state: email || undefined,
       redirect_uri: process.env.YT_REDIRECT_URI!,
@@ -63,7 +63,7 @@ export class YtAuthorizeChannelsService {
 
     return client.generateAuthUrl({
       access_type: "offline",
-      prompt: "consent",
+      prompt: "select_account consent",
       scope: ["https://www.googleapis.com/auth/drive.file"],
       state: `${DRIVE_STATE_PREFIX}${email}`,
       redirect_uri: process.env.YT_REDIRECT_URI!,
