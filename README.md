@@ -131,6 +131,10 @@ Rotas destinadas à operação do próprio usuário criador na interface web:
 - `GET /youtube/oauth2callback` - Rota de retorno para validar os tokens OAuth do Google em seu projeto.
 - `GET /youtube/channels` - Lista todos os canais do YouTube que estão autenticados e permitidos para uso do usuário logado.
 - `POST /youtube/upload` - Dispara o envio do arquivo do vídeo, Thumbnail e metadados diretamente para o canal.
+- `GET /youtube/comments?channelId=...&maxResults=50&pageToken=...` - Lista comentários dos vídeos do canal (mais recentes primeiro); use `nextPageToken` para paginar.
+- `POST /youtube/comments/reply` - Responde um comentário; corpo JSON: `{ "channelId": "...", "parentId": "...", "text": "..." }`.
+
+Os endpoints de comentários exigem o canal permitido no token do agente. A resposta exige o escopo OAuth `youtube.force-ssl`; canais autorizados antes desta alteração precisam ser reconectados para conceder a nova permissão.
 
 ### 🎵 Geração Automática de Músicas (Suno REST)
 - `POST /suno/generate` - Inicia a geração de áudio baseado em prompts definidos de estilo e letras (tags).
