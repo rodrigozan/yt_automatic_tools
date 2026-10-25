@@ -30,9 +30,17 @@ const router = Router();
  *                   enum: [youtube, facebook, instagram]
  *               contentType:
  *                 type: string
- *                 enum: [video, image, text]
+ *                 enum: [video, image, text, carousel]
  *               isShortForm:
  *                 type: boolean
+ *               mediaPaths:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Carrossel (contentType carousel) - de 2 a 10 imagens locais; só Facebook.
+ *               scheduledAt:
+ *                 type: string
+ *                 description: ISO 8601; agenda no Facebook (de 10 minutos a 30 dias à frente).
  *               mediaPath:
  *                 type: string
  *               caption:

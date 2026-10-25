@@ -3,10 +3,11 @@ import { YtUploadVideoService } from "./yt_upload_video.service";
 import { GDrivePublishUploadService, DrivePublicUpload } from "./gdrive_publish_upload.service";
 import { FacebookPublishService } from "./facebook_publish.service";
 import { InstagramPublishService } from "./instagram_publish.service";
+import { parseScheduledAt } from "../utils/facebook_schedule.utils";
 import { isShortFormContent } from "../utils/is_short_form_content.utils";
 
 export type PublishPlatform = "youtube" | "facebook" | "instagram";
-export type PublishContentType = "video" | "image" | "text";
+export type PublishContentType = "video" | "image" | "text" | "carousel";
 
 export interface PublishInput {
   email: string;
@@ -16,6 +17,10 @@ export interface PublishInput {
   contentType: PublishContentType;
   isShortForm?: boolean;
   mediaPath?: string;
+  /** carrossel: 2 a 10 imagens locais. */
+  mediaPaths?: string[];
+  /** ISO 8601; agenda o post no Facebook (10 min a 30 dias à frente). */
+  scheduledAt?: string;
   chaptersFilePath?: string;
   caption?: string;
   theme?: string;
@@ -32,6 +37,7 @@ export interface PublishResult {
   url?: string;
   error?: string;
   skippedReason?: string;
+  scheduledFor?: string;
 }
 
 const MIME_BY_CONTENT: Record<"video" | "image", string> = {
@@ -68,6 +74,19 @@ export class SocialPublisherService {
       const mimeType = MIME_BY_CONTENT[input.contentType as "video" | "image"];
       driveUpload = await GDrivePublishUploadService.uploadPublicFile(input.mediaPath, driveRefreshToken, mimeType);
       return driveUpload.publicUrl;
+    };
+
+    const extraUploads: DrivePublicUpload[] = [];
+    const ensurePublicUrls = async (): Promise<string[]> => {
+      if (!input.mediaPaths?.length) throw new Error("mediaPaths é obrigatório para publicar carrossel.");
+      if (!driveRefreshToken) throw new Error("Canal sem refreshToken do Google — não é possível hospedar os arquivos publicamente no Drive.");
+      const urls: string[] = [];
+      for (const path of input.mediaPaths) {
+        const up = await GDrivePublishUploadService.uploadPublicFile(path, driveRefreshToken, "image/jpeg");
+        extraUploads.push(up);
+        urls.push(up.publicUrl);
+      }
+      return urls;
     };
 
     if (wantsYoutube) {
@@ -117,18 +136,21 @@ export class SocialPublisherService {
         } else {
           try {
             let postId: string;
-            if (input.contentType === "text") {
+            const scheduledAt = parseScheduledAt(input.scheduledAt);
+            if (input.contentType === "carousel") {
+              ({ postId } = await FacebookPublishService.publishPhotoAlbum(pageId, pageAccessToken, await ensurePublicUrls(), caption, scheduledAt));
+            } else if (input.contentType === "text") {
               ({ postId } = await FacebookPublishService.publishTextPost(pageId, pageAccessToken, caption));
             } else if (input.contentType === "image") {
               const publicUrl = await ensurePublicUrl();
-              ({ postId } = await FacebookPublishService.publishPhoto(pageId, pageAccessToken, publicUrl, caption));
+              ({ postId } = await FacebookPublishService.publishPhoto(pageId, pageAccessToken, publicUrl, caption, scheduledAt));
             } else {
               const publicUrl = await ensurePublicUrl();
               ({ postId } = shortForm
-                ? await FacebookPublishService.publishReel(pageId, pageAccessToken, publicUrl, caption)
-                : await FacebookPublishService.publishFeedVideo(pageId, pageAccessToken, publicUrl, caption));
+                ? await FacebookPublishService.publishReel(pageId, pageAccessToken, publicUrl, caption, scheduledAt)
+                : await FacebookPublishService.publishFeedVideo(pageId, pageAccessToken, publicUrl, caption, scheduledAt));
             }
-            results.push({ platform: "facebook", success: true, postId, url: `https://facebook.com/${postId}` });
+            results.push({ platform: "facebook", success: true, postId, url: `https://facebook.com/${postId}`, ...(scheduledAt ? { scheduledFor: new Date(scheduledAt * 1000).toISOString() } : {}) });
           } catch (error: any) {
             results.push({ platform: "facebook", success: false, error: error.message });
           }
@@ -141,6 +163,12 @@ export class SocialPublisherService {
             platform: "instagram",
             success: false,
             skippedReason: "Conta do Instagram Business não conectada para este canal.",
+          });
+        } else if (input.contentType === "carousel") {
+          results.push({
+            platform: "instagram",
+            success: false,
+            skippedReason: "Carrossel do Instagram é publicado pelo ig_automatic_tools, não por esta rota.",
           });
         } else if (input.contentType === "text") {
           results.push({
@@ -165,6 +193,9 @@ export class SocialPublisherService {
       }
     }
 
+    if (extraUploads.length && driveRefreshToken) {
+      for (const up of extraUploads) await GDrivePublishUploadService.deleteFile(up.fileId, driveRefreshToken);
+    }
     if (driveUpload && driveRefreshToken) {
       await GDrivePublishUploadService.deleteFile((driveUpload as DrivePublicUpload).fileId, driveRefreshToken);
     }
