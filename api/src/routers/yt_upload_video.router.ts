@@ -125,4 +125,34 @@ router.get("/youtube/comments", requireGladiadorYoutube, (req, res) => YtComment
  */
 router.post("/youtube/comments/reply", requireGladiadorYoutube, (req, res) => YtCommentsController.reply(req, res));
 
+/**
+ * @swagger
+ * /youtube/videos/{videoId}/visibility:
+ *   patch:
+ *     summary: Muda a visibilidade de um vídeo já enviado
+ *     parameters:
+ *       - in: path
+ *         name: videoId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [channelId, status]
+ *             properties:
+ *               channelId: { type: string }
+ *               status: { type: string, enum: [private, unlisted, public] }
+ *     responses:
+ *       200:
+ *         description: "{ videoId, previous, status, changed }"
+ *       403:
+ *         description: Vídeo de outro canal ou canal não autorizado
+ *       404:
+ *         description: Vídeo ou canal não encontrado
+ */
+router.patch("/youtube/videos/:videoId/visibility", requireGladiadorYoutube, (req, res) => controller.setVisibility(req, res));
+
 export default router;

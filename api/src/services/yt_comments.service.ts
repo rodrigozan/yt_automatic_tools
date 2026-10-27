@@ -10,7 +10,7 @@ export class YtCommentsError extends Error {
 }
 
 export class YtCommentsService {
-  private static async getYoutubeClient(channelId: string) {
+  static async getYoutubeClient(channelId: string) {
     const user = await User.findOne({ "channels.channelId": channelId });
     const channel = user?.channels.find((item) => item.channelId === channelId);
 

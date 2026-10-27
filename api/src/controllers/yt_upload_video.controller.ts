@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 
 import { YtUploadVideoService } from "../services/yt_upload_video.service";
+import { YtVideoVisibilityService } from "../services/yt_video_visibility.service";
+import { YtCommentsError } from "../services/yt_comments.service";
 import { PublishValidationError } from "../utils/publish_options.utils";
 
 export class YtUploadVideoController {
@@ -63,6 +65,23 @@ export class YtUploadVideoController {
       );
       return res.status(200).json({ items });
     } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  public async setVisibility(req: Request, res: Response) {
+    const { channelId, status } = req.body ?? {};
+    if (typeof channelId !== "string" || !channelId.trim()) {
+      return res.status(400).json({ error: "O campo channelId é obrigatório." });
+    }
+    try {
+      const result = await YtVideoVisibilityService.setVisibility(channelId, String(req.params.videoId), status);
+      return res.status(200).json(result);
+    } catch (err: any) {
+      if (err instanceof PublishValidationError || err instanceof YtCommentsError) {
+        return res.status(err.httpStatus).json({ error: err.message });
+      }
+      console.error("❌ Erro ao mudar visibilidade:", err.response?.data || err.message);
       return res.status(500).json({ error: err.message });
     }
   }
