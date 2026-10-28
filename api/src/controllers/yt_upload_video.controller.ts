@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 
 import { YtUploadVideoService } from "../services/yt_upload_video.service";
 import { YtVideoVisibilityService } from "../services/yt_video_visibility.service";
+import { YtVideoThumbnailService } from "../services/yt_video_thumbnail.service";
 import { YtCommentsError } from "../services/yt_comments.service";
 import { PublishValidationError } from "../utils/publish_options.utils";
 
@@ -82,6 +83,25 @@ export class YtUploadVideoController {
         return res.status(err.httpStatus).json({ error: err.message });
       }
       console.error("❌ Erro ao mudar visibilidade:", err.response?.data || err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  public async setThumbnail(req: Request, res: Response) {
+    // multipart: o canal vem na query para o middleware validar antes de ler o arquivo
+    const channelId = req.query.channelId;
+    if (typeof channelId !== "string" || !channelId.trim()) {
+      return res.status(400).json({ error: "O parâmetro channelId (query) é obrigatório." });
+    }
+    if (!req.file) return res.status(400).json({ error: "Envie a imagem no campo file (multipart)." });
+    try {
+      const result = await YtVideoThumbnailService.setThumbnail(channelId, String(req.params.videoId), req.file.buffer);
+      return res.status(200).json(result);
+    } catch (err: any) {
+      if (err instanceof PublishValidationError || err instanceof YtCommentsError) {
+        return res.status(err.httpStatus).json({ error: err.message });
+      }
+      console.error("❌ Erro ao definir thumbnail:", err.response?.data || err.message);
       return res.status(500).json({ error: err.message });
     }
   }

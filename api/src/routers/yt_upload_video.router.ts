@@ -1,9 +1,18 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
+import multer from "multer";
 import { YtUploadVideoController } from "../controllers/yt_upload_video.controller";
 import { YtCommentsController } from "../controllers/yt_comments.controller";
 import { requireGladiadorYoutube } from "../middleware/gladiador_yt_auth.middleware";
 
 const router = Router();
+
+const thumbUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024, files: 1 } }).single("file");
+const receiveThumbnail = (req: Request, res: Response, next: NextFunction) =>
+  thumbUpload(req, res, (err: any) => {
+    if (!err) return next();
+    const tooBig = err.code === "LIMIT_FILE_SIZE";
+    return res.status(tooBig ? 413 : 400).json({ error: tooBig ? "A thumbnail passa de 2 MB." : err.message });
+  });
 
 const controller = new YtUploadVideoController();
 
@@ -154,5 +163,40 @@ router.post("/youtube/comments/reply", requireGladiadorYoutube, (req, res) => Yt
  *         description: Vídeo ou canal não encontrado
  */
 router.patch("/youtube/videos/:videoId/visibility", requireGladiadorYoutube, (req, res) => controller.setVisibility(req, res));
+
+/**
+ * @swagger
+ * /youtube/videos/{videoId}/thumbnail:
+ *   put:
+ *     summary: Define a thumbnail de um vídeo já enviado
+ *     parameters:
+ *       - in: path
+ *         name: videoId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: channelId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [file]
+ *             properties:
+ *               file: { type: string, format: binary, description: PNG ou JPG de até 2 MB }
+ *     responses:
+ *       200:
+ *         description: "{ videoId, bytes, mimeType, thumbnailUrl }"
+ *       400:
+ *         description: Arquivo ausente, formato inválido ou recusado pelo YouTube
+ *       403:
+ *         description: Vídeo de outro canal ou canal sem permissão de thumbnail
+ *       413:
+ *         description: Arquivo maior que 2 MB
+ */
+router.put("/youtube/videos/:videoId/thumbnail", requireGladiadorYoutube, receiveThumbnail, (req, res) => controller.setThumbnail(req, res));
 
 export default router;
