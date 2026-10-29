@@ -36,7 +36,6 @@ export class GenerateAndUploadVideosController {
                 email,
                 channelId,
                 channelType,
-                refreshToken,
                 channelLang = 'en',
                 forceStyle,
                 niche,
@@ -191,8 +190,7 @@ export class GenerateAndUploadVideosController {
                 channelLang,
                 niche,
                 musicGenre,
-                forceStyle,
-                refreshToken
+                forceStyle
             });
 
             // 4. Return Final Result

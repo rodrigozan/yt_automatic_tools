@@ -5,6 +5,100 @@ import { useAuth } from '../contexts/AuthContext';
 import { Input, Select } from '../components/Form';
 import { cn } from '../lib/utils';
 
+interface MediaSectionProps {
+    label: string;
+    inputType: 'file' | 'gdrive';
+    setInputType: (value: 'file' | 'gdrive') => void;
+    file: File | null;
+    setFile: (file: File) => void;
+    setGDriveLink: (link: string) => void;
+    gdriveLink: string;
+    icon: typeof Music;
+}
+
+const MediaSection = ({
+        label,
+        inputType,
+        setInputType,
+        setFile,
+        file,
+        setGDriveLink,
+        gdriveLink,
+        icon: Icon
+    }: MediaSectionProps) => (
+        <div className="p-6 glass rounded-2xl border border-white/[0.05] space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-primary/10">
+                    <Icon size={18} className="text-primary" />
+                </div>
+                <h3 className="font-semibold text-sm">{label}</h3>
+            </div>
+
+            <div className="flex p-1 bg-white/[0.04] rounded-xl w-fit">
+                <button
+                    type="button"
+                    onClick={() => setInputType('file')}
+                    className={cn(
+                        "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-medium transition-all",
+                        inputType === 'file' ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"
+                    )}
+                >
+                    <UploadIcon size={14} /> Arquivo
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setInputType('gdrive')}
+                    className={cn(
+                        "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-medium transition-all",
+                        inputType === 'gdrive' ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"
+                    )}
+                >
+                    <LinkIcon size={14} /> Google Drive
+                </button>
+            </div>
+
+            {inputType === 'file' ? (
+                <div
+                    className="relative group"
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                        event.preventDefault();
+                        const droppedFile = event.dataTransfer.files[0];
+                        if (droppedFile) setFile(droppedFile);
+                    }}
+                >
+                    <input
+                        type="file"
+                        aria-label={label}
+                        onChange={(e) => {
+                            const selectedFile = e.target.files?.[0];
+                            if (selectedFile) setFile(selectedFile);
+                        }}
+                        className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                    />
+                    <div className="border-2 border-dashed border-white/10 rounded-xl p-4 text-center group-hover:border-primary/50 transition-colors">
+                        <p className="text-sm text-muted-foreground break-all" aria-live="polite">
+                            {file ? file.name : 'Clique ou arraste o arquivo aqui'}
+                        </p>
+                        {file && (
+                            <p className="mt-1 text-xs text-primary">
+                                Arquivo selecionado · {(file.size / (1024 * 1024)).toFixed(2)} MB · Clique para trocar
+                            </p>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <Input
+                    type="url"
+                    value={gdriveLink}
+                    onChange={(e) => setGDriveLink(e.target.value)}
+                    placeholder="Cole o link ou ID do GDrive..."
+                />
+            )}
+        </div>
+    );
+
+
 export function Upload() {
     const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
@@ -156,67 +250,6 @@ export function Upload() {
         }
     };
 
-    const MediaSection = ({
-        label,
-        inputType,
-        setInputType,
-        setFile,
-        setGDriveLink,
-        gdriveLink,
-        icon: Icon
-    }: any) => (
-        <div className="p-6 glass rounded-2xl border border-white/[0.05] space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 rounded-lg bg-primary/10">
-                    <Icon size={18} className="text-primary" />
-                </div>
-                <h3 className="font-semibold text-sm">{label}</h3>
-            </div>
-            
-            <div className="flex p-1 bg-white/[0.04] rounded-xl w-fit">
-                <button
-                    type="button"
-                    onClick={() => setInputType('file')}
-                    className={cn(
-                        "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-medium transition-all",
-                        inputType === 'file' ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"
-                    )}
-                >
-                    <UploadIcon size={14} /> Arquivo
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setInputType('gdrive')}
-                    className={cn(
-                        "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-medium transition-all",
-                        inputType === 'gdrive' ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"
-                    )}
-                >
-                    <LinkIcon size={14} /> Google Drive
-                </button>
-            </div>
-
-            {inputType === 'file' ? (
-                <div className="relative group">
-                    <input
-                        type="file"
-                        onChange={(e) => setFile(e.target.files?.[0] || null)}
-                        className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-                    />
-                    <div className="border-2 border-dashed border-white/10 rounded-xl p-4 text-center group-hover:border-primary/50 transition-colors">
-                        <p className="text-sm text-muted-foreground">Clique ou arraste o arquivo aqui</p>
-                    </div>
-                </div>
-            ) : (
-                <Input
-                    type="url"
-                    value={gdriveLink}
-                    onChange={(e) => setGDriveLink(e.target.value)}
-                    placeholder="Cole o link ou ID do GDrive..."
-                />
-            )}
-        </div>
-    );
 
     return (
         <div className="space-y-8 max-w-5xl mx-auto pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -264,7 +297,7 @@ export function Upload() {
                     <div className="absolute top-0 right-0 p-8 opacity-5">
                         <Youtube size={120} />
                     </div>
-                    
+
                     <div className="flex items-center gap-3 mb-8">
                         <div className="p-2.5 rounded-xl bg-primary/20">
                             <Youtube className="w-6 h-6 text-primary" />
@@ -456,7 +489,8 @@ export function Upload() {
                                     label="Áudio Principal"
                                     inputType={audioInputType}
                                     setInputType={setAudioInputType}
-                                    setFile={setAudioFile}
+                                    file={audioFile}
+                                        setFile={setAudioFile}
                                     setGDriveLink={setAudioGDriveLink}
                                     gdriveLink={audioGDriveLink}
                                     icon={Music}
@@ -466,6 +500,7 @@ export function Upload() {
                                         label="Vídeo de Fundo"
                                         inputType={videoInputType}
                                         setInputType={setVideoInputType}
+                                        file={videoFile}
                                         setFile={setVideoFile}
                                         setGDriveLink={setVideoGDriveLink}
                                         gdriveLink={videoGDriveLink}
@@ -476,6 +511,7 @@ export function Upload() {
                                         label="Imagem Base"
                                         inputType={imageInputType}
                                         setInputType={setImageInputType}
+                                        file={imageFile}
                                         setFile={setImageFile}
                                         setGDriveLink={setImageGDriveLink}
                                         gdriveLink={imageGDriveLink}
@@ -492,8 +528,8 @@ export function Upload() {
                     disabled={isLoading || !channelId}
                     className={cn(
                         "w-full px-4 py-4 rounded-2xl shadow-2xl transition-all font-bold flex items-center justify-center gap-3 text-lg",
-                        isLoading || !channelId 
-                            ? "bg-muted text-muted-foreground cursor-not-allowed" 
+                        isLoading || !channelId
+                            ? "bg-muted text-muted-foreground cursor-not-allowed"
                             : "bg-primary text-primary-foreground hover:scale-[1.01] hover:shadow-primary/20 active:scale-[0.99]"
                     )}
                 >

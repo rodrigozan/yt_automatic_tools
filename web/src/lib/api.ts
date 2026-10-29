@@ -159,3 +159,24 @@ export const getVideoDetails = async (videoId: string) => {
 };
 
 export default api;
+
+export interface YoutubeDownload {
+    id: string;
+    status: 'downloading' | 'ready' | 'failed';
+    videoId: string;
+    quality: string;
+    format?: 'video' | 'mp3';
+    error?: string;
+    expiresAt?: number;
+    downloadUrl?: string;
+}
+
+export async function createYoutubeDownload(url: string, quality: string, format: 'video' | 'mp3' = 'video'): Promise<YoutubeDownload> {
+    const response = await api.post<YoutubeDownload>('/youtube/downloads', { url, quality, format });
+    return response.data;
+}
+
+export async function getYoutubeDownload(id: string, signal?: AbortSignal): Promise<YoutubeDownload> {
+    const response = await api.get<YoutubeDownload>(`/youtube/downloads/${id}`, { signal });
+    return response.data;
+}

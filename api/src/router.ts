@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import youtubeDownloads from './routers/yt_download.router';
 import {
     video,
     ytAuthorize, ytUploadVideo, ytListChannels, ytUpdateChannel,
@@ -15,6 +16,7 @@ import {
 } from './routers';
 
 const router = Router()
+router.use(youtubeDownloads);
 
 router.use(video);
 router.use(ytAuthorize);

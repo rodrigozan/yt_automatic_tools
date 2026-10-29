@@ -46,6 +46,7 @@ __playground__/
 src/tests/
 src/test/
 *.test.ts
+!test/yt_download.test.ts
 
 # ========================================
 # 🎥 MEDIA / ASSETS PESADOS

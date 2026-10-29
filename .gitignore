@@ -1,4 +1,5 @@
 node_modules/
+.venv-ytdlp/
 dist/
 build/
 .env
@@ -10,3 +11,4 @@ phanterai_vps_key
 phanterai_vps_key.pub
 *.pem
 *.key
+api/cookies.txt

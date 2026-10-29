@@ -19,6 +19,7 @@ Este repositório está organizado em dois componentes principais:
 - **Automação de Metadados**: Geração automática de títulos magnéticos, descrições ricas com links configuráveis (Spotify, etc.) e tags otimizadas por IA.
 - **Pipeline de Vídeos Narrativos Longos**: Geração fim a fim de dramas/romances de época (~50–90 min) via OpenRouter — story bible persistida, capítulos com verificação e regeneração automática de continuidade, prompts visuais, narração TTS e metadados de publicação.
 - **Processamento Contínuo**: Conversão e processamento de áudio/vídeo.
+- **Download de vídeos e Shorts**: Na tela **Tools**, cole um link do YouTube e baixe vídeo e áudio em MP4, com resolução máxima de 360p, 720p ou 1080p.
 - **Gerenciamento Unificado**: Administre múltiplos canais de YouTube de maneira centralizada.
 
 ---
@@ -117,6 +118,27 @@ npm run dev
 ---
 
 ## 🔌 Referência de Endpoints (API/Rotas)
+
+### Download de vídeos longos e Shorts
+
+Acesse **Tools → Download de vídeos e Shorts**. A preparação ocorre em segundo plano; mantenha a página aberta e use **Salvar MP4** quando concluir. A resolução pode ser menor que a selecionada, conforme os formatos MP4 disponíveis. A orientação original é preservada.
+
+O servidor precisa de **Node.js 22+**, **FFmpeg** no PATH e de uma versão atual do [yt-dlp](https://github.com/yt-dlp/yt-dlp#installation), incluindo suas dependências para YouTube. O downloader usa o Node como runtime JavaScript. Instalação isolada sugerida, a partir de `api/`:
+
+```bash
+python3 -m venv .venv-ytdlp
+.venv-ytdlp/bin/pip install -U 'yt-dlp[default]'
+```
+
+Configure `YT_DLP_PATH=/caminho/absoluto/api/.venv-ytdlp/bin/yt-dlp` no `api/.env` e reinicie a API. Se `yt-dlp` já estiver no PATH, a variável é opcional. Mantenha o downloader atualizado; mudanças no YouTube podem exigir atualização e um runtime JavaScript compatível, conforme a documentação do yt-dlp.
+
+- `POST /api/youtube/downloads` com `{ "url": "https://youtube.com/shorts/VIDEO_ID", "quality": "1080" }` retorna `202` com `id` e `status`.
+- `GET /api/youtube/downloads/:id` retorna `downloading`, `ready` ou `failed`; quando pronto, inclui `downloadUrl` e `expiresAt` (timestamp em milissegundos).
+- `GET /api/youtube/downloads/:id/file` entrega o MP4 como anexo, com suporte a streaming HTTP.
+
+São permitidas duas preparações simultâneas e até 20 registros temporários por processo. Os arquivos são armazenados no diretório temporário do sistema e removidos uma hora após a conclusão ou falha. O tempo máximo de preparação é de duas horas e o yt-dlp limita cada formato solicitado a 2 GiB. Lives em andamento, estreias futuras, playlists e conteúdo que exige autenticação não são suportados.
+
+Os registros ficam em memória: reiniciar a API invalida os links e pode deixar arquivos temporários para a limpeza do sistema. Em produção, use uma única instância para estas rotas ou afinidade de sessão. Os IDs aleatórios funcionam como links de acesso ao arquivo; não os compartilhe se o vídeo for sensível.
 
 A API fornece rotas diversas para o ecossistema. Abaixo está a lista detalhada de todos os serviços HTTP disponíveis sob o prefixo padrão `/api`:
 
