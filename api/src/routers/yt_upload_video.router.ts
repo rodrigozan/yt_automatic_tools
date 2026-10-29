@@ -199,4 +199,7 @@ router.patch("/youtube/videos/:videoId/visibility", requireGladiadorYoutube, (re
  */
 router.put("/youtube/videos/:videoId/thumbnail", requireGladiadorYoutube, receiveThumbnail, (req, res) => controller.setThumbnail(req, res));
 
+/** Atualiza title/description/tags; channelId no JSON. Retorna leitura posterior e verificação do agendamento. */
+router.patch("/youtube/videos/:videoId/snippet", requireGladiadorYoutube, (req, res) => controller.updateSnippet(req, res));
+
 export default router;

@@ -6,7 +6,20 @@ import { YtVideoThumbnailService } from "../services/yt_video_thumbnail.service"
 import { YtCommentsError } from "../services/yt_comments.service";
 import { PublishValidationError } from "../utils/publish_options.utils";
 
+import { YtVideoSnippetService } from "../services/yt_video_snippet.service";
+
 export class YtUploadVideoController {
+  public async updateSnippet(req: Request, res: Response) {
+    const { channelId } = req.body ?? {};
+    if (typeof channelId !== "string" || !channelId.trim()) return res.status(400).json({ error: "channelId é obrigatório." });
+    try {
+      return res.status(200).json(await YtVideoSnippetService.update(channelId, String(req.params.videoId), req.body));
+    } catch (err: any) {
+      const code = err instanceof YtCommentsError ? err.httpStatus : Number(err.response?.status) || 500;
+      return res.status(code >= 400 && code <= 599 ? code : 500).json({ error: err.message, ...(err.result ? { verification: err.result } : {}) });
+    }
+  }
+
   public async upload(req: Request, res: Response) {
     try {
       const {
