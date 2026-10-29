@@ -27,3 +27,25 @@ test('edita apenas snippet, preserva campos omitidos e confirma status por nova 
     await assert.rejects(YtVideoSnippetService.update('channel', 'video', { title: '' }), /title inválido/);
   } finally { YtCommentsService.getYoutubeClient = original; }
 });
+
+test('aceita tags reordenadas e rejeita tags removidas, extras ou alteradas', async () => {
+  const original = YtCommentsService.getYoutubeClient;
+  const status = { privacyStatus: 'private', publishAt: '2026-10-29T15:24:00Z' };
+  const tags = ['zeta', 'alpha'];
+  try {
+    for (const returned of [['alpha', 'zeta'], ['alpha'], ['alpha', 'zeta', 'extra'], ['alpha', 'outra']]) {
+      let reads = 0;
+      YtCommentsService.getYoutubeClient = async () => ({ videos: {
+        list: async () => ({ data: { items: [{ snippet: { channelId: 'channel', title: 'Título', description: '', tags: ++reads === 1 ? tags : returned, categoryId: '22' }, status }] } }),
+        update: async () => ({ data: {} }),
+      } } as any);
+      if (returned.length === 2 && returned.includes('zeta')) {
+        const result = await YtVideoSnippetService.update('channel', 'video', { tags });
+        assert.equal(result.verified, true);
+      } else {
+        await assert.rejects(YtVideoSnippetService.update('channel', 'video', { tags }), (error: any) => error.result.metadataVerified === false && error.result.statusPreserved === true);
+      }
+      assert.deepEqual(tags, ['zeta', 'alpha']);
+    }
+  } finally { YtCommentsService.getYoutubeClient = original; }
+});

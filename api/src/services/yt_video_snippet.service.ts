@@ -30,7 +30,9 @@ export class YtVideoSnippetService {
     try { after = await read(); }
     catch { throw new YtCommentsError("Atualização enviada; leitura de confirmação falhou. Confira o vídeo antes de repetir.", 502); }
     if (!after) throw new YtCommentsError("Atualização enviada; vídeo ausente na confirmação.", 502);
-    const metadataVerified = keys.every(key => JSON.stringify((after!.snippet as any)?.[key] ?? (key === "tags" ? [] : "")) === JSON.stringify((snippet as any)[key] ?? (key === "tags" ? [] : "")));
+    // YouTube may reorder tags; compare their contents without mutating either array.
+    const normalize = (key: string, value: any) => key === "tags" ? [...(value ?? [])].sort() : value ?? "";
+    const metadataVerified = keys.every(key => JSON.stringify(normalize(key, (after!.snippet as any)?.[key])) === JSON.stringify(normalize(key, (snippet as any)[key])));
     const statusPreserved = before.status?.privacyStatus === after.status?.privacyStatus && before.status?.publishAt === after.status?.publishAt;
     const result = { videoId, snippet: after.snippet, previousStatus: before.status, status: after.status, metadataVerified, statusPreserved, verified: metadataVerified && statusPreserved };
     if (!result.verified) throw Object.assign(new YtCommentsError("Atualização enviada, mas a conferência divergiu. Não repita automaticamente.", 502), { result });
